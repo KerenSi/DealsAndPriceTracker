@@ -24,6 +24,8 @@ collection and daily notifications. Suggested setup:
 | `INGESTION_CRON` | Defaults to `0 0 6 * * *` (06:00 Israel time) |
 | `SAMPLE_SOURCE_ENABLED` | Set to `false` once real feeds are configured |
 | `TRANSPARENCY_SOURCE_ENABLED` | Set to `true` to read Price Transparency Law files |
+| `YOCHANANOF_PORTAL_URL`, `YOCHANANOF_USERNAME`, `YOCHANANOF_PASSWORD` | Yochananof's portal and login (defaults: url.publishedprices.co.il, `yohananof`, no password) |
+| `TIV_TAAM_USERNAME` / `_PASSWORD`, `OSHER_AD_USERNAME` / `_PASSWORD` | Override the publishedprices.co.il logins (defaults: `TivTaam`, `osherad`, no password) |
 
 ## Frontend environment variables
 
