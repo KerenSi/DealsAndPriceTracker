@@ -18,7 +18,7 @@ GitHub Actions (push to main) ──▶ ECR images ──▶ SSM Run Command on 
 | Rollout script run on the host | `deploy/remote-deploy.sh` |
 | CI/CD | `.github/workflows/deploy.yml` |
 
-## Monthly cost (rough, on-demand, il-central-1)
+## Monthly cost (rough, on-demand, eu-central-1 Frankfurt)
 
 | Item | ≈ USD / month |
 | --- | --- |
@@ -38,8 +38,13 @@ $60–80/month for the same app; the Terraform here can grow into that later.
 ## One-time setup
 
 You need an AWS account, the AWS CLI logged in as an admin (`aws configure` or SSO), and
-Terraform ≥ 1.6. `il-central-1` (Tel Aviv) is an opt-in region: enable it under
-*Account → AWS Regions*, or set `region` in `terraform.tfvars`.
+Terraform ≥ 1.6. The default region is `eu-central-1` (Frankfurt); change `region` in
+`terraform.tfvars` to use another.
+
+On an AWS **free plan** account (created on or after 15 July 2025), t3.small is free-tier
+eligible and the usage above draws from the plan's $100–200 credits. The free plan ends
+after 6 months or when the credits run out, whichever comes first; upgrade to a paid plan
+before then to keep the site running.
 
 ```bash
 cd deploy/terraform
@@ -56,7 +61,7 @@ Then:
    above. No AWS keys are stored in GitHub; the workflow uses OIDC.
 2. **API keys** go straight into Parameter Store, never into git or Terraform:
    ```bash
-   aws ssm put-parameter --region il-central-1 --type SecureString \
+   aws ssm put-parameter --region eu-central-1 --type SecureString \
      --name /dealstracker/ANTHROPIC_API_KEY --value 'sk-ant-...'
    ```
    Any parameter under `/dealstracker/` becomes an env var on the next deploy (e.g. VAPID

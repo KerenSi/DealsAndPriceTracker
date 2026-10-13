@@ -5,13 +5,13 @@ variable "name" {
 }
 
 variable "region" {
-  description = "AWS region. Tel Aviv keeps latency low and the server on an Israeli IP, which some retailer price feeds expect. It is an opt-in region: enable it under Account settings first, or pick e.g. eu-central-1."
+  description = "AWS region. Frankfurt by default; il-central-1 (Tel Aviv, opt-in) gives an Israeli IP if a retailer feed ever blocks foreign traffic."
   type        = string
-  default     = "il-central-1"
+  default     = "eu-central-1"
 }
 
 variable "instance_type" {
-  description = "EC2 size. t3.small (2 vCPU, 2 GiB) fits Postgres + Spring Boot + Next.js + Caddy."
+  description = "EC2 size. t3.small (2 vCPU, 2 GiB, free-tier eligible on AWS free plan accounts) fits Postgres + Spring Boot + Next.js + Caddy."
   type        = string
   default     = "t3.small"
 }
