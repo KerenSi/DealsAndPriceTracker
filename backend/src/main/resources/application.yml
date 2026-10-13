@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: deals-tracker
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/dealstracker}
+    username: ${DB_USERNAME:dealstracker}
+    password: ${DB_PASSWORD:dealstracker}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+tracker:
+  timezone: Asia/Jerusalem
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  admin-token: ${ADMIN_TOKEN:}
+  ingestion:
+    # Daily at 06:00 Israel time (MVP definition of done: daily price collection).
+    cron: ${INGESTION_CRON:0 0 6 * * *}
+    run-on-startup: ${INGESTION_RUN_ON_STARTUP:false}
+  deals:
+    default-threshold-percent: 15
+    baseline-days: 30
+    long-baseline-days: 60
+  sources:
+    sample:
+      # Synthetic data so the app works end-to-end before real feeds are wired up.
+      enabled: ${SAMPLE_SOURCE_ENABLED:true}
+    transparency:
+      enabled: ${TRANSPARENCY_SOURCE_ENABLED:false}
+      feeds: []
+  notifications:
+    telegram:
+      bot-token: ${TELEGRAM_BOT_TOKEN:}
+  chat:
+    model: ${CHAT_MODEL:claude-opus-5-5}
+    max-tokens: 16000
