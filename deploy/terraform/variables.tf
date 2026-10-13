@@ -28,10 +28,10 @@ variable "domain" {
   default     = ""
 }
 
-variable "github_repo" {
-  description = "owner/repo allowed to deploy through GitHub Actions OIDC (case-sensitive, as GitHub reports it)."
+variable "github_oidc_subject_prefix" {
+  description = "Start of the OIDC subject GitHub Actions presents for this repo. This repo uses GitHub's immutable subjects (owner and repo IDs included); check with `gh api repos/OWNER/REPO/actions/oidc/customization/sub` and use its sub_claim_prefix."
   type        = string
-  default     = "KerenSi/DealsAndPriceTracker"
+  default     = "repo:KerenSi@3074892/DealsAndPriceTracker@1416702214"
 }
 
 variable "github_deploy_branch" {
