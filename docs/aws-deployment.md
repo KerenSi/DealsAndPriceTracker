@@ -18,6 +18,8 @@ collection and daily notifications. Suggested setup:
 | `ADMIN_TOKEN` | Shared secret for `/api/admin/*` and listing/deleting alerts |
 | `ANTHROPIC_API_KEY` | Enables the in-app chat |
 | `TELEGRAM_BOT_TOKEN` | Enables Telegram alerts |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Optional. Browser push key pair (base64url); if unset, one is generated on first start and kept in the `web_push_keys` table. Don't change it once browsers have subscribed. |
+| `VAPID_SUBJECT` | Contact push services may use (`mailto:` or `https:` URL) |
 | `CORS_ALLOWED_ORIGINS` | Frontend origin(s), comma-separated |
 | `INGESTION_CRON` | Defaults to `0 0 6 * * *` (06:00 Israel time) |
 | `SAMPLE_SOURCE_ENABLED` | Set to `false` once real feeds are configured |
