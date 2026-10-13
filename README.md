@@ -12,6 +12,7 @@
 - [Database Schema](#database-schema)
 - [High-Level Architecture](#high-level-architecture)
 - [Running Locally](#running-locally)
+- [Deploying](#deploying)
 - [API](#api)
 - [Roadmap](#roadmap)
 
@@ -167,6 +168,11 @@ curl -X POST -H "X-Admin-Token: devtoken" "http://localhost:8080/api/admin/inges
 ```
 
 Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegram alerts. All configuration options are listed in [docs/aws-deployment.md](docs/aws-deployment.md).
+
+## Deploying
+
+The app runs on AWS on a single EC2 host (about $25/month) with HTTPS and automatic deploys
+from `main`. See [deploy/README.md](deploy/README.md).
 
 ## API
 

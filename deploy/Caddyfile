@@ -1,0 +1,6 @@
+# Caddy gets and renews the Let's Encrypt certificate for SITE_ADDRESS by itself.
+# HTTPS is required for browser push notifications (service workers).
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy frontend:3000
+}
