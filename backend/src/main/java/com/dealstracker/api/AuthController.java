@@ -53,7 +53,7 @@ public class AuthController {
         return new AuthResponse(r.token(), r.expiresAt(), user(r.user()));
     }
 
-    private static UserDto user(User u) {
-        return new UserDto(u.getId(), u.getEmail());
+    static UserDto user(User u) {
+        return new UserDto(u.getId(), u.getEmail(), u.isShowSimilarProducts());
     }
 }

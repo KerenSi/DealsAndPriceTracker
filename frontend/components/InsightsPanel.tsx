@@ -11,7 +11,7 @@ const icons: Record<Insight["type"], string> = {
   GENUINE_DEAL: "🔥",
 };
 
-// The backend already orders insights (real deals first) and caps them at four.
+// The backend already picks and orders the insights (real deals first).
 export function InsightsPanel({ insights, loggedIn }: { insights: Insight[]; loggedIn: boolean }) {
   const hint = loggedIn
     ? "Star products you buy to see the cheapest option in their size or stage."

@@ -5,11 +5,13 @@ import com.dealstracker.api.Dtos.ProductDetail;
 import com.dealstracker.api.Dtos.ProductSummary;
 import com.dealstracker.api.Dtos.StoreDto;
 import com.dealstracker.api.Dtos.StorePrice;
-import com.dealstracker.auth.WatchlistService;
+import com.dealstracker.auth.PreferencesService;
+import com.dealstracker.auth.UserPreferences;
 import com.dealstracker.deals.ListingAnalysis;
 import com.dealstracker.deals.PriceAnalysisService;
 import com.dealstracker.deals.PricePoint;
 import com.dealstracker.domain.Category;
+import com.dealstracker.domain.Interest;
 import com.dealstracker.domain.Product;
 import com.dealstracker.domain.Store;
 import com.dealstracker.repository.ProductListingRepository;
@@ -17,7 +19,6 @@ import com.dealstracker.repository.ProductRepository;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpHeaders;
@@ -37,14 +38,14 @@ public class ProductController {
     private final ProductRepository products;
     private final ProductListingRepository listings;
     private final PriceAnalysisService analysis;
-    private final WatchlistService watchlist;
+    private final PreferencesService preferences;
 
     public ProductController(ProductRepository products, ProductListingRepository listings,
-                             PriceAnalysisService analysis, WatchlistService watchlist) {
+                             PriceAnalysisService analysis, PreferencesService preferences) {
         this.products = products;
         this.listings = listings;
         this.analysis = analysis;
-        this.watchlist = watchlist;
+        this.preferences = preferences;
     }
 
     @GetMapping
@@ -52,12 +53,12 @@ public class ProductController {
                                      @RequestParam(required = false) String q,
                                      @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false)
                                      String authorization) {
-        Set<UUID> watchedIds = watchlist.watchedProductIds(authorization);
+        UserPreferences prefs = preferences.forRequest(authorization);
         Map<UUID, List<ListingAnalysis>> byProduct = analysis.analyzeAll().stream()
                 .collect(Collectors.groupingBy(a -> a.product().getId()));
         String query = q == null || q.isBlank() ? null : q.trim();
         return products.search(category, query).stream()
-                .map(p -> summary(p, byProduct.getOrDefault(p.getId(), List.of()), watchedIds.contains(p.getId())))
+                .map(p -> summary(p, byProduct.getOrDefault(p.getId(), List.of()), prefs.interestIn(p.getId())))
                 .toList();
     }
 
@@ -74,8 +75,8 @@ public class ProductController {
                         a.unitLabel(), a.latest().isPromotion(), a.latest().getPromotionDescription(),
                         a.latest().getScrapedAt(), a.evaluation()))
                 .toList();
-        boolean watched = watchlist.watchedProductIds(authorization).contains(id);
-        return new ProductDetail(summary(product, analyses, watched), prices);
+        Interest interest = preferences.forRequest(authorization).interestIn(id);
+        return new ProductDetail(summary(product, analyses, interest), prices);
     }
 
     @GetMapping("/{id}/history")
@@ -89,7 +90,7 @@ public class ProductController {
                 .toList();
     }
 
-    private static ProductSummary summary(Product p, List<ListingAnalysis> analyses, boolean watched) {
+    private static ProductSummary summary(Product p, List<ListingAnalysis> analyses, Interest interest) {
         ListingAnalysis cheapest = analyses.stream()
                 .min(Comparator.comparing((ListingAnalysis a) -> a.evaluation().effectivePrice()))
                 .orElse(null);
@@ -101,7 +102,7 @@ public class ProductController {
                 cheapest == null ? null : cheapest.unitLabel(),
                 analyses.size(),
                 analyses.stream().anyMatch(a -> a.evaluation().genuineDeal()),
-                watched);
+                interest);
     }
 
     static StoreDto store(Store s) {

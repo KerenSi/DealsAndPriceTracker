@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="mx-auto max-w-sm space-y-4">
       <h1 className="text-2xl font-semibold">{mode === "login" ? "Log in" : "Create an account"}</h1>
       <p className="text-sm text-slate-600">
-        Star the products you buy to see the cheapest options for them in your insights.
+        Star the products you buy to see the cheapest options for them, and hide the ones you don&apos;t care about.
       </p>
       <form onSubmit={submit} className="space-y-3">
         <input

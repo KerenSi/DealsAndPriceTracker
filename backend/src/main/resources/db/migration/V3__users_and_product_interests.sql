@@ -1,10 +1,11 @@
--- Accounts, login sessions and the per-user list of products they care about.
+-- Accounts, login sessions and each user's interest in products.
 
 CREATE TABLE users (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email         VARCHAR(255) NOT NULL UNIQUE, -- stored lower-cased
-    password_hash VARCHAR(100) NOT NULL,        -- BCrypt
-    created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email                 VARCHAR(255) NOT NULL UNIQUE, -- stored lower-cased
+    password_hash         VARCHAR(100) NOT NULL,        -- BCrypt
+    show_similar_products BOOLEAN NOT NULL DEFAULT TRUE, -- "cheapest" insights also compare other brands
+    created_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE user_sessions (
@@ -16,9 +17,10 @@ CREATE TABLE user_sessions (
 
 CREATE INDEX idx_user_sessions_user ON user_sessions (user_id);
 
-CREATE TABLE watched_products (
+CREATE TABLE product_interests (
     user_id    UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    interest   VARCHAR(20) NOT NULL, -- WATCHED, NOT_INTERESTED
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, product_id)
 );

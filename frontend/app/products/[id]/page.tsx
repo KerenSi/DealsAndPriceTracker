@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PriceHistoryChart } from "@/components/PriceHistoryChart";
-import { WatchButton } from "@/components/WatchButton";
+import { InterestButtons } from "@/components/InterestButtons";
 import { categoryLabel, formatPrice, getHistory, getProduct, type StorePrice } from "@/lib/api";
 import { getSessionToken } from "@/lib/session";
 
@@ -34,7 +34,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
           <h1 className="text-2xl font-semibold" dir="auto">
             {product.title}
           </h1>
-          <WatchButton productId={product.id} watched={product.watched} loggedIn={token != null} withLabel />
+          <InterestButtons productId={product.id} interest={product.interest} loggedIn={token != null} withLabels />
         </div>
         <p className="text-sm text-slate-600">
           {product.brand} · {categoryLabel[product.category]}

@@ -3,7 +3,7 @@ package com.dealstracker.api;
 import com.dealstracker.api.Dtos.ChatRequest;
 import com.dealstracker.api.Dtos.ChatResponse;
 import com.dealstracker.api.Dtos.StoreDto;
-import com.dealstracker.auth.WatchlistService;
+import com.dealstracker.auth.PreferencesService;
 import com.dealstracker.chat.ChatService;
 import com.dealstracker.insights.Insight;
 import com.dealstracker.insights.InsightService;
@@ -25,14 +25,14 @@ public class MiscController {
     private final StoreRepository stores;
     private final InsightService insights;
     private final ChatService chat;
-    private final WatchlistService watchlist;
+    private final PreferencesService preferences;
 
     public MiscController(StoreRepository stores, InsightService insights, ChatService chat,
-                          WatchlistService watchlist) {
+                          PreferencesService preferences) {
         this.stores = stores;
         this.insights = insights;
         this.chat = chat;
-        this.watchlist = watchlist;
+        this.preferences = preferences;
     }
 
     @GetMapping("/stores")
@@ -43,7 +43,7 @@ public class MiscController {
     @GetMapping("/insights")
     public List<Insight> insights(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
-        return insights.insights(watchlist.watchedProductIds(authorization));
+        return insights.insights(preferences.forRequest(authorization));
     }
 
     @PostMapping("/chat")

@@ -22,6 +22,9 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Column(name = "show_similar_products", nullable = false)
+    private boolean showSimilarProducts = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
@@ -36,4 +39,6 @@ public class User {
     public UUID getId() { return id; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
+    public boolean isShowSimilarProducts() { return showSimilarProducts; }
+    public void setShowSimilarProducts(boolean v) { this.showSimilarProducts = v; }
 }

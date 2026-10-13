@@ -2,6 +2,8 @@
 
 export type Category = "DIAPERS" | "BABY_FOOD";
 
+export type Interest = "WATCHED" | "NOT_INTERESTED";
+
 export interface Store {
   id: string;
   chain: string;
@@ -23,7 +25,7 @@ export interface ProductSummary {
   unitLabel: string | null;
   storeCount: number;
   hasGenuineDeal: boolean;
-  watched: boolean;
+  interest: Interest | null;
 }
 
 export interface DealEvaluation {
@@ -80,6 +82,7 @@ export const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 export interface User {
   id: string;
   email: string;
+  showSimilarProducts: boolean;
 }
 
 // Pass the session token for anything that differs per user; those responses are never cached.
