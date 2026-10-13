@@ -33,6 +33,10 @@ public class Store {
     @Column(name = "store_code")
     private String storeCode;
 
+    /** Words that identify this branch in the chain's Stores file, used to look up store_code. */
+    @Column(name = "store_match")
+    private String storeMatch;
+
     @Column(nullable = false)
     private boolean enabled = true;
 
@@ -55,5 +59,11 @@ public class Store {
     public String getAddress() { return address; }
     public String getChainCode() { return chainCode; }
     public String getStoreCode() { return storeCode; }
+    public String getStoreMatch() { return storeMatch; }
     public boolean isEnabled() { return enabled; }
+
+    public void setCodes(String chainCode, String storeCode) {
+        this.chainCode = chainCode;
+        this.storeCode = storeCode;
+    }
 }

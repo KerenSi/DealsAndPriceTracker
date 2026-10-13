@@ -38,8 +38,42 @@ tracker:
       # Synthetic data so the app works end-to-end before real feeds are wired up.
       enabled: ${SAMPLE_SOURCE_ENABLED:true}
     transparency:
+      # Real store prices (Price Transparency Law files). Set SAMPLE_SOURCE_ENABLED=false with it.
       enabled: ${TRANSPARENCY_SOURCE_ENABLED:false}
       feeds: []
+      # Where each chain publishes its files. The logins are the public read-only accounts the
+      # chains publish for these files.
+      portals:
+        TIV_TAAM:
+          type: CERBERUS
+          url: https://url.publishedprices.co.il
+          username: ${TIV_TAAM_USERNAME:TivTaam}
+          password: ${TIV_TAAM_PASSWORD:}
+        OSHER_AD:
+          type: CERBERUS
+          url: https://url.publishedprices.co.il
+          username: ${OSHER_AD_USERNAME:osherad}
+          password: ${OSHER_AD_PASSWORD:}
+        YOCHANANOF:
+          type: CERBERUS
+          url: ${YOCHANANOF_PORTAL_URL:https://publishprices.co.il/supershuk}
+          username: ${YOCHANANOF_USERNAME:readonly}
+          password: ${YOCHANANOF_PASSWORD:123456}
+        GOOD_PHARM:
+          type: BINA
+          url: https://goodpharm.binaprojects.com
+        SHUFERSAL:
+          type: WEB_INDEX
+          url: https://prices.shufersal.co.il/FileObject/UpdateCategory?catID={catId}&storeId={storeCode}&page={page}
+          max-pages: 3
+        SUPER_PHARM:
+          type: WEB_INDEX
+          url: https://prices.super-pharm.co.il/?type={type}&date={date}&page={page}
+          max-pages: 30
+        CARREFOUR:
+          type: WEB_INDEX
+          url: https://prices.carrefour.co.il/
+          download-url: https://prices.carrefour.co.il/{fileDate}/{name}
   notifications:
     telegram:
       bot-token: ${TELEGRAM_BOT_TOKEN:}

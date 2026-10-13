@@ -14,7 +14,7 @@ public final class CategoryClassifier {
             "חיתול", "טיטול", "האגיס", "פמפרס", "huggies", "pampers", "diaper");
 
     private static final List<String> BABY_FOOD_KEYWORDS = List.of(
-            "מטרנה", "סימילאק", "נוטרילון", "אפטמיל", "תמ\"ל", "תמל ", "דייסה", "דייסת", "מחית", "גרבר",
+            "מטרנה", "סימילאק", "נוטרילון", "אפטמיל", "תמ\"ל", "תמל ", "דייסה", "דייסת", " מחית", "גרבר",
             "materna", "similac", "nutrilon", "aptamil", "gerber", "infant formula", "baby cereal");
 
     private static final List<String> EXCLUDE_KEYWORDS = List.of(
@@ -30,7 +30,8 @@ public final class CategoryClassifier {
         if (itemName == null) {
             return Optional.empty();
         }
-        String name = itemName.toLowerCase(Locale.ROOT);
+        // Leading space so " מחית" (puree) matches at a word start but not inside "צמחית" (vegetable-based).
+        String name = " " + itemName.toLowerCase(Locale.ROOT);
         if (EXCLUDE_KEYWORDS.stream().anyMatch(name::contains)) {
             return Optional.empty();
         }

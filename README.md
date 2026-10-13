@@ -35,7 +35,7 @@
 - **Scheduled Ingestion:** Cron-driven worker (every 6–12 hours) fetching updated prices and active store promotions/multi-buys.
 - **Time-Series Storage:** Saves historical price snapshots per product store location.
 
-> **Status:** Implemented as a scheduled job (`DailyJob`, daily at 06:00 Israel time for the MVP; configurable via `INGESTION_CRON`). Sources plug in through a `PriceSource` interface. A parser for Price Transparency Law files (`PriceFull` / `PromoFull` XML, plain or gzipped) is implemented and tested. Until per-chain file discovery is built, a synthetic `SamplePriceSource` provides data for development.
+> **Status:** Implemented as a scheduled job (`DailyJob`, daily at 06:00 Israel time for the MVP; configurable via `INGESTION_CRON`). Sources plug in through a `PriceSource` interface. `TransparencyPriceSource` reads the real Price Transparency Law files (`PriceFull` / `PromoFull` XML, plain or gzipped, UTF-8 or UTF-16): it logs in to each chain's portal, finds the newest files for the branch and parses them. A branch without a store code gets one from the chain's `Stores` file by matching its `store_match` words (e.g. "יגאל אלון"). Turn it on with `TRANSPARENCY_SOURCE_ENABLED=true` and `SAMPLE_SOURCE_ENABLED=false`; the synthetic `SamplePriceSource` remains the default for development.
 
 ### Feature 3: Smart Deal & Fake Discount Detection Agent
 
@@ -58,14 +58,19 @@
 
 ## MVP
 
-**Scope:** Collects diaper and baby food data from local branches in Yad Eliyahu of:
+**Scope:** Collects diaper and baby food data from these Tel Aviv branches (around Yigal Alon / La Guardia):
 
-- Yochananof
-- Osher Ad
-- Carrefour
-- Super-Pharm
-- Good Pharm
-- Tiv Taam
+| Branch | Portal | Status |
+| --- | --- | --- |
+| Tiv Taam Yigal Alon (store 080, Yigal Alon 94) | publishedprices.co.il (Cerberus) | Verified live |
+| Osher Ad Yigal Alon (store 024, Kreminitzky 3) | publishedprices.co.il (Cerberus) | Verified live |
+| Yochananof Yigal Alon | publishprices.co.il/supershuk (Cerberus) | Configured, not verified yet |
+| Shufersal Deal Yigal Alon | prices.shufersal.co.il | Configured, not verified yet |
+| Super-Pharm Yigal Alon (2 branches) | prices.super-pharm.co.il | Configured, not verified yet |
+| Carrefour La Guardia | prices.carrefour.co.il | Configured, not verified yet |
+| Good Pharm La Guardia | goodpharm.binaprojects.com | Configured, not verified yet |
+
+Store codes that aren't known yet are looked up automatically on the first ingestion and saved.
 
 **Product list:** Diapers and baby food.
 
@@ -81,7 +86,7 @@
 
 - [ ] Deployed on AWS (database on AWS as well): see [docs/aws-deployment.md](docs/aws-deployment.md)
 - [ ] Available online
-- [ ] Daily price collection: the scheduled job is in place; real store feeds still need to be connected
+- [ ] Daily price collection: the scheduled job and real store feeds are in place (Tiv Taam and Osher Ad verified); the other chains' portals still need a live check
 - [ ] Daily notification (if relevant): Telegram alerts are in place; needs deployment and a bot token
 
 ## Technical Stack
@@ -92,7 +97,7 @@
 | **Frontend** | Next.js 14+ (App Router, React, Tailwind CSS, shadcn/ui) | Next.js 14 (App Router) + Tailwind CSS; shadcn/ui not added yet |
 | **Database** | PostgreSQL + pgvector (stores time-series price snapshots & product embeddings) | PostgreSQL 16; pgvector not used yet (no embeddings in the MVP) |
 | **AI Framework** | Spring AI (integrated with OpenAI GPT-4o / Claude / Gemini APIs) | Official Anthropic Java SDK (Claude) for the chat; deal detection is rule-based |
-| **Web Scraping / Data Ingestion** | Playwright / JSoup / Official Supermarket Open APIs (Cerelac / Israeli Food Transparency Law Data) | Price Transparency Law XML parser; synthetic source for development |
+| **Web Scraping / Data Ingestion** | Playwright / JSoup / Official Supermarket Open APIs (Cerelac / Israeli Food Transparency Law Data) | Price Transparency Law files, found through each chain's portal (Cerberus, Bina Projects, download pages); synthetic source for development |
 | **Notifications** | Telegram Bot API / Web Push API / WhatsApp Green API | Telegram Bot API |
 
 ## Repository Layout
@@ -105,7 +110,7 @@ docs/      Deployment notes
 
 | Backend package | What it does |
 | --- | --- |
-| `ingestion` | `PriceSource` interface, `SamplePriceSource`, `TransparencyPriceSource` + `TransparencyFileParser`, `IngestionService`, `DailyJob` |
+| `ingestion` | `PriceSource` interface, `SamplePriceSource`, `TransparencyPriceSource` + `TransparencyFileParser`, chain portal clients in `ingestion.portal`, `IngestionService`, `DailyJob` |
 | `deals` | `DealDetector` and `PriceAnalysisService` (latest price + history → deal evaluation and unit price) |
 | `insights` | Genuine deals first, then cheapest per unit for the sizes / stages the user watches, skipping products marked not interesting |
 | `auth` | `AuthService` (accounts, BCrypt passwords, bearer-token sessions) and `PreferencesService` (product marks, settings) |
@@ -188,7 +193,8 @@ Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegr
 
 ## Roadmap
 
-- [ ] Real data: per-chain discovery of the latest `PriceFull` / `PromoFull` files, and filling in `chain_code` / `store_code` for the Yad Eliyahu branches from each chain's Stores file
+- [x] Real data: per-chain discovery of the latest `PriceFull` / `PromoFull` files, and store codes from each chain's Stores file
+- [ ] Verify the Yochananof, Shufersal, Super-Pharm, Carrefour and Good Pharm portals against live data
 - [ ] Deploy to AWS
 - [ ] UI for subscribing to alerts
 - [ ] WhatsApp and Web Push notifiers

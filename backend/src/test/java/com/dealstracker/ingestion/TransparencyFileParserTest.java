@@ -101,4 +101,61 @@ class TransparencyFileParserTest {
     private static ByteArrayInputStream stream(String s) {
         return new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
     }
+
+    @Test
+    void parsesUtf16StoresFileAndMatchesBranch() throws Exception {
+        String xml = """
+                <Root><ChainID>7290873255550</ChainID><SubChains><SubChain><Stores>
+                  <Store><StoreID>063</StoreID><StoreName>אבן גבירול 64</StoreName><Address>אבן גבירול 64</Address><City>5000</City></Store>
+                  <Store><StoreID>080</StoreID><StoreName>יגאל אלון דלי</StoreName><Address>יגאל-אלון 94</Address><City>5000</City></Store>
+                </Stores></SubChain></SubChains></Root>
+                """;
+        // Cerberus chains publish Stores files as UTF-16 with a byte order mark and no XML declaration.
+        byte[] utf16 = ("\uFEFF" + xml).getBytes(StandardCharsets.UTF_16LE);
+        List<TransparencyFileParser.StoreInfo> stores = parser.parseStores(new ByteArrayInputStream(utf16));
+
+        assertThat(stores).extracting(TransparencyFileParser.StoreInfo::storeCode).containsExactly("063", "080");
+        assertThat(stores.get(1).matches("יגאל אלון")).isTrue();
+        assertThat(stores.get(1).matches("דלי יגאל אלון")).isTrue();
+        assertThat(stores.get(0).matches("יגאל אלון")).isFalse();
+    }
+
+    @Test
+    void readsItemLevelPromotionsAndSkipsBasketCoupons() throws Exception {
+        // Layout from a real Osher Ad PromoFull file: quantity and price on each PromotionItem.
+        String promos = """
+                <Root><Promotions>
+                  <Promotion>
+                    <PromotionDescription>קופון 50 מעל 249</PromotionDescription>
+                    <AdditionalIsCoupon>1</AdditionalIsCoupon>
+                    <Groups><Group><MinPurchaseAmount>249.00</MinPurchaseAmount><PromotionItems>
+                      <PromotionItem><ItemCode>7290000000001</ItemCode><MinQty>1</MinQty><DiscountedPrice>18.50</DiscountedPrice></PromotionItem>
+                      <PromotionItem><ItemCode>7290000000002</ItemCode><MinQty>1</MinQty></PromotionItem>
+                    </PromotionItems></Group></Groups>
+                  </Promotion>
+                  <Promotion>
+                    <PromotionDescription>חיתולי פרימיום פמפרס 2 ב 65</PromotionDescription>
+                    <Groups><Group><PromotionItems>
+                      <PromotionItem>
+                        <ItemCode>7290000000001</ItemCode><MinQty>2.00</MinQty>
+                        <DiscountedPrice>65.00</DiscountedPrice><DiscountedPricePerMida>1.625</DiscountedPricePerMida>
+                      </PromotionItem>
+                    </PromotionItems></Group></Groups>
+                  </Promotion>
+                </Promotions></Root>
+                """;
+        Map<String, TransparencyFileParser.Promotion> parsed = parser.parsePromotions(stream(promos));
+
+        assertThat(parsed).containsOnlyKeys("7290000000001");
+        TransparencyFileParser.Promotion promo = parsed.get("7290000000001");
+        assertThat(promo.minQuantity()).isEqualTo(2);
+        assertThat(promo.discountedPrice()).isEqualByComparingTo("65");
+        assertThat(promo.totalPriceForQuantity()).isTrue();
+    }
+
+    @Test
+    void pureeKeywordDoesNotMatchInsideOtherWords() {
+        assertThat(CategoryClassifier.classify("קצפת צמחית השף הלבן")).isEmpty();
+        assertThat(CategoryClassifier.classify("מחית תפוחי עץ מטרנה")).contains(Category.BABY_FOOD);
+    }
 }
