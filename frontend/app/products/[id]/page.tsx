@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PriceHistoryChart } from "@/components/PriceHistoryChart";
+import { WatchButton } from "@/components/WatchButton";
 import { categoryLabel, formatPrice, getHistory, getProduct, type StorePrice } from "@/lib/api";
+import { getSessionToken } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,8 @@ function DealBadge({ p }: { p: StorePrice }) {
 }
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
-  const detail = await getProduct(params.id).catch(() => null);
+  const token = getSessionToken();
+  const detail = await getProduct(params.id, token).catch(() => null);
   if (!detail) notFound();
   const history = await getHistory(params.id);
   const { product, prices } = detail;
@@ -27,9 +30,12 @@ export default async function ProductPage({ params }: { params: { id: string } }
         <Link href="/" className="text-sm text-slate-500 hover:underline">
           ← All products
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold" dir="auto">
-          {product.title}
-        </h1>
+        <div className="mt-2 flex items-center gap-3">
+          <h1 className="text-2xl font-semibold" dir="auto">
+            {product.title}
+          </h1>
+          <WatchButton productId={product.id} watched={product.watched} loggedIn={token != null} withLabel />
+        </div>
         <p className="text-sm text-slate-600">
           {product.brand} · {categoryLabel[product.category]}
           {product.sizeLabel && ` · ${product.sizeLabel}`}

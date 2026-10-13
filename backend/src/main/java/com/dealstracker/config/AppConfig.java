@@ -28,7 +28,7 @@ public class AppConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
                         .allowedOrigins(props.corsAllowedOrigins().toArray(String[]::new))
-                        .allowedMethods("GET", "POST", "DELETE");
+                        .allowedMethods("GET", "POST", "PUT", "DELETE");
             }
         };
     }

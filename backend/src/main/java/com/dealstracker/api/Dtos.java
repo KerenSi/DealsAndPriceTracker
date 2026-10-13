@@ -8,6 +8,7 @@ import com.dealstracker.domain.UnitType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -29,7 +30,7 @@ public final class Dtos {
             UUID id, String title, String brand, Category category, String sizeLabel,
             BigDecimal unitQuantity, UnitType unitType,
             BigDecimal lowestPrice, String lowestPriceStore, BigDecimal lowestUnitPrice, String unitLabel,
-            int storeCount, boolean hasGenuineDeal) {
+            int storeCount, boolean hasGenuineDeal, boolean watched) {
     }
 
     public record StorePrice(
@@ -61,5 +62,16 @@ public final class Dtos {
     public record AlertDto(UUID id, UUID productId, String productTitle, BigDecimal targetDiscountPercentage,
                            NotificationChannel channel, String recipientId, boolean active,
                            OffsetDateTime lastNotifiedAt) {
+    }
+
+    public record AuthRequest(
+            @NotBlank @Email @Size(max = 255) String email,
+            @NotBlank @Size(min = 8, max = 72) String password) {
+    }
+
+    public record UserDto(UUID id, String email) {
+    }
+
+    public record AuthResponse(String token, OffsetDateTime expiresAt, UserDto user) {
     }
 }

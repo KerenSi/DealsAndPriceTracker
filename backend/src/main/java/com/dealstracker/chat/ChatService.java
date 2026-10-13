@@ -17,6 +17,7 @@ import com.dealstracker.insights.Insight;
 import com.dealstracker.insights.InsightService;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,7 +125,7 @@ public class ChatService {
                     deal)).append('\n');
         }
         sb.append("\n## Insights\n");
-        for (Insight i : insights.insights()) {
+        for (Insight i : insights.insights(Set.of())) {
             sb.append("- ").append(i.message()).append('\n');
         }
         return sb.toString();

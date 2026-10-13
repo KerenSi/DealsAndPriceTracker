@@ -3,15 +3,18 @@ package com.dealstracker.api;
 import com.dealstracker.api.Dtos.ChatRequest;
 import com.dealstracker.api.Dtos.ChatResponse;
 import com.dealstracker.api.Dtos.StoreDto;
+import com.dealstracker.auth.WatchlistService;
 import com.dealstracker.chat.ChatService;
 import com.dealstracker.insights.Insight;
 import com.dealstracker.insights.InsightService;
 import com.dealstracker.repository.StoreRepository;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,11 +25,14 @@ public class MiscController {
     private final StoreRepository stores;
     private final InsightService insights;
     private final ChatService chat;
+    private final WatchlistService watchlist;
 
-    public MiscController(StoreRepository stores, InsightService insights, ChatService chat) {
+    public MiscController(StoreRepository stores, InsightService insights, ChatService chat,
+                          WatchlistService watchlist) {
         this.stores = stores;
         this.insights = insights;
         this.chat = chat;
+        this.watchlist = watchlist;
     }
 
     @GetMapping("/stores")
@@ -35,8 +41,9 @@ public class MiscController {
     }
 
     @GetMapping("/insights")
-    public List<Insight> insights() {
-        return insights.insights();
+    public List<Insight> insights(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+        return insights.insights(watchlist.watchedProductIds(authorization));
     }
 
     @PostMapping("/chat")
