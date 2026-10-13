@@ -78,6 +78,10 @@ tracker:
   notifications:
     telegram:
       bot-token: ${TELEGRAM_BOT_TOKEN:}
+    web-push:
+      public-key: ${VAPID_PUBLIC_KEY:}
+      private-key: ${VAPID_PRIVATE_KEY:}
+      subject: ${VAPID_SUBJECT:https://github.com/KerenSi/DealsAndPriceTracker}
   chat:
     model: ${CHAT_MODEL:claude-opus-5-5}
     max-tokens: 16000

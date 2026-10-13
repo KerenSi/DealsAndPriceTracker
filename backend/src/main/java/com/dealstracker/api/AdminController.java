@@ -2,6 +2,7 @@ package com.dealstracker.api;
 
 import com.dealstracker.ingestion.IngestionService;
 import com.dealstracker.notification.DealAlertService;
+import com.dealstracker.notification.push.DealPushService;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -18,23 +19,26 @@ public class AdminController {
 
     private final IngestionService ingestion;
     private final DealAlertService alerts;
+    private final DealPushService push;
     private final AdminGuard guard;
     private final Clock clock;
 
-    public AdminController(IngestionService ingestion, DealAlertService alerts, AdminGuard guard, Clock clock) {
+    public AdminController(IngestionService ingestion, DealAlertService alerts, DealPushService push,
+                           AdminGuard guard, Clock clock) {
         this.ingestion = ingestion;
         this.alerts = alerts;
+        this.push = push;
         this.guard = guard;
         this.clock = clock;
     }
 
-    /** Runs ingestion now, then sends alerts. */
+    /** Runs ingestion now, then sends alerts and browser notifications. */
     @PostMapping("/ingest")
     public Map<String, Object> ingest(@RequestHeader(value = AdminGuard.HEADER, required = false) String token) {
         guard.check(token);
         IngestionService.Result result = ingestion.ingestAll();
         int sent = alerts.evaluateAndNotify();
-        return Map.of("ingestion", result, "alertsSent", sent);
+        return Map.of("ingestion", result, "alertsSent", sent, "pushesSent", push.pushDeals());
     }
 
     /**

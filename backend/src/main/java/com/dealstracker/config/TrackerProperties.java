@@ -50,7 +50,14 @@ public record TrackerProperties(
                          Integer maxPages) {
     }
 
-    public record Notifications(Telegram telegram) {
+    public record Notifications(Telegram telegram, WebPush webPush) {
+    }
+
+    /**
+     * Browser push. Leave the keys empty to have the server generate and store a pair on first start;
+     * subject is the contact (mailto: or https:) push services may use to reach whoever runs the server.
+     */
+    public record WebPush(String publicKey, String privateKey, String subject) {
     }
 
     public record Telegram(String botToken) {

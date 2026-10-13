@@ -3,7 +3,7 @@ import { BACKEND_URL } from "@/lib/api";
 import { getSessionToken } from "@/lib/session";
 
 // Forwards a logged-in user's request to the backend with their session token.
-export async function forwardAsUser(method: "PUT" | "DELETE", path: string, body?: string) {
+export async function forwardAsUser(method: "POST" | "PUT" | "DELETE", path: string, body?: string) {
   const token = getSessionToken();
   if (!token) {
     return NextResponse.json({ error: "Login required" }, { status: 401 });

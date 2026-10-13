@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { InsightsPanel } from "@/components/InsightsPanel";
 import { InterestButtons } from "@/components/InterestButtons";
+import { PushToggle } from "@/components/PushToggle";
 import { SimilarProductsToggle } from "@/components/SimilarProductsToggle";
 import { categoryLabel, formatPrice, getInsights, getProducts, type Category } from "@/lib/api";
 import { getCurrentUser, getSessionToken } from "@/lib/session";
@@ -28,7 +29,12 @@ export default async function HomePage({
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Insights</h2>
-          {user && <SimilarProductsToggle initial={user.showSimilarProducts} />}
+          {user && (
+            <div className="flex flex-wrap items-center gap-4">
+              <PushToggle />
+              <SimilarProductsToggle initial={user.showSimilarProducts} />
+            </div>
+          )}
         </div>
         <InsightsPanel insights={insights} loggedIn={loggedIn} />
       </section>

@@ -12,6 +12,7 @@
 - [Database Schema](#database-schema)
 - [High-Level Architecture](#high-level-architecture)
 - [Running Locally](#running-locally)
+- [Deploying](#deploying)
 - [API](#api)
 - [Roadmap](#roadmap)
 
@@ -54,7 +55,7 @@
   - **WhatsApp (Twilio / Green API / WhatsApp Business API):** Messaging integration.
   - **Web-App Push Notifications:** Web push alerts triggered via browser Service Workers (using the Web Push API / Firebase Cloud Messaging), even when the site isn't actively open.
 
-> **Status:** Telegram is implemented (`TelegramNotifier`); alerts run after each ingestion, at most once per rule per day. WhatsApp and Web Push plug into the same `Notifier` interface but aren't built yet. Alert rules are created through the API; there is no UI for them yet.
+> **Status:** Browser push is implemented: logged-in users turn on "Deal alerts" on the home page, and after each ingestion every browser they turned it on in gets a notification for each real deal on a starred product (standard Web Push with VAPID, no Firebase account needed). A deal is pushed once, and again only if the price drops further or a week has passed. Telegram is also implemented (`TelegramNotifier`, rules created through the API, at most once per rule per day). WhatsApp isn't built yet.
 
 ## MVP
 
@@ -87,7 +88,7 @@ Store codes that aren't known yet are looked up automatically on the first inges
 - [ ] Deployed on AWS (database on AWS as well): see [docs/aws-deployment.md](docs/aws-deployment.md)
 - [ ] Available online
 - [ ] Daily price collection: the scheduled job and real store feeds are in place (Tiv Taam, Osher Ad, Yochananof and Carrefour verified); Shufersal, Super-Pharm and Good Pharm are still open
-- [ ] Daily notification (if relevant): Telegram alerts are in place; needs deployment and a bot token
+- [ ] Daily notification (if relevant): browser push and Telegram alerts are in place; needs deployment (push needs HTTPS)
 
 ## Technical Stack
 
@@ -98,7 +99,7 @@ Store codes that aren't known yet are looked up automatically on the first inges
 | **Database** | PostgreSQL + pgvector (stores time-series price snapshots & product embeddings) | PostgreSQL 16; pgvector not used yet (no embeddings in the MVP) |
 | **AI Framework** | Spring AI (integrated with OpenAI GPT-4o / Claude / Gemini APIs) | Official Anthropic Java SDK (Claude) for the chat; deal detection is rule-based |
 | **Web Scraping / Data Ingestion** | Playwright / JSoup / Official Supermarket Open APIs (Cerelac / Israeli Food Transparency Law Data) | Price Transparency Law files, found through each chain's portal (Cerberus, Bina Projects, download pages); synthetic source for development |
-| **Notifications** | Telegram Bot API / Web Push API / WhatsApp Green API | Telegram Bot API |
+| **Notifications** | Telegram Bot API / Web Push API / WhatsApp Green API | Web Push API (VAPID, implemented with the JDK only) + Telegram Bot API |
 
 ## Repository Layout
 
@@ -114,7 +115,7 @@ docs/      Deployment notes
 | `deals` | `DealDetector` and `PriceAnalysisService` (latest price + history → deal evaluation and unit price) |
 | `insights` | Genuine deals first, then cheapest per unit for the sizes / stages the user watches, skipping products marked not interesting |
 | `auth` | `AuthService` (accounts, BCrypt passwords, bearer-token sessions) and `PreferencesService` (product marks, settings) |
-| `notification` | `Notifier` interface, `TelegramNotifier`, `DealAlertService` |
+| `notification` | `Notifier` interface, `TelegramNotifier`, `DealAlertService`; `notification.push`: Web Push encryption and VAPID (`WebPushCrypto`), `WebPushSender`, `DealPushService` |
 | `chat` | `ChatService`: Claude via the Anthropic Java SDK |
 | `api` | REST controllers |
 
@@ -129,6 +130,9 @@ The draft schema from the PRD stored one `products` row per store. To compare th
 | `product_listings` | A product sold at a specific store (optional product URL) |
 | `price_snapshots` | Time series per listing: `price`, `original_reference_price`, `is_promotion`, `promotion_description`, plus `promo_min_quantity` / `promo_total_price` for multi-buy offers |
 | `alert_rules` | As in the draft, plus `last_notified_at` to send at most one alert per day |
+| `push_subscriptions` | Browsers that turned on deal alerts: push endpoint and encryption keys, per user |
+| `push_deal_notifications` | Last deal pushed per user and product, so an ongoing deal isn't pushed daily |
+| `web_push_keys` | The server's generated VAPID key pair (unless set through env vars) |
 
 Full DDL: [`backend/src/main/resources/db/migration`](backend/src/main/resources/db/migration).
 
@@ -147,6 +151,7 @@ flowchart LR
         db --> chat[Chat service]
     end
     alerts --> telegram[Telegram]
+    alerts --> push[Browser push services]
     chat <--> claude[Claude API]
     frontend[Next.js frontend] <--> backend
 ```
@@ -171,7 +176,12 @@ curl -X POST -H "X-Admin-Token: devtoken" "http://localhost:8080/api/admin/backf
 curl -X POST -H "X-Admin-Token: devtoken" "http://localhost:8080/api/admin/ingest"
 ```
 
-Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegram alerts. All configuration options are listed in [docs/aws-deployment.md](docs/aws-deployment.md).
+Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegram alerts. Browser push works out of the box on `http://localhost:3000`; anywhere else the site must be served over HTTPS. On iPhone, web push only works after adding the site to the Home Screen. All configuration options are listed in [docs/aws-deployment.md](docs/aws-deployment.md).
+
+## Deploying
+
+The app runs on AWS on a single EC2 host (about $25/month) with HTTPS and automatic deploys
+from `main`. See [deploy/README.md](deploy/README.md).
 
 ## API
 
@@ -185,6 +195,9 @@ Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegr
 | POST | `/api/auth/logout`, GET `/api/auth/me` | `Authorization: Bearer <token>` |
 | PUT / DELETE | `/api/me/products/{productId}/interest` | `{ interest: "WATCHED" \| "NOT_INTERESTED" }`, or clear the mark (bearer token required) |
 | PUT | `/api/me/settings` | `{ showSimilarProducts }` (bearer token required) |
+| GET | `/api/push/public-key` | The VAPID key browsers subscribe with |
+| PUT / DELETE | `/api/me/push-subscription` | Save this browser's `PushSubscription` JSON, or forget `{ endpoint }` (bearer token required) |
+| POST | `/api/me/push-subscription/test` | Send a test notification to the user's browsers (bearer token required) |
 | GET | `/api/stores` | Tracked stores |
 | POST | `/api/chat` | `{ "messages": [{ "role": "user", "content": "..." }] }` |
 | POST | `/api/alerts` | `{ productId, channel: "TELEGRAM", recipientId, targetDiscountPercentage }` |
@@ -199,6 +212,6 @@ Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegr
 - [ ] Super-Pharm: get past the Reblaze bot challenge, or find another source
 - [ ] Good Pharm: pick the branch to track (none on La Guardia)
 - [ ] Deploy to AWS
-- [ ] UI for subscribing to alerts
-- [ ] WhatsApp and Web Push notifiers
+- [x] Browser push alerts for real deals on starred products
+- [ ] WhatsApp notifier
 - [ ] Add a product by pasting its URL (Feature 1)
