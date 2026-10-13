@@ -59,7 +59,7 @@
 
 ## MVP
 
-**Scope:** Collects diaper and baby food data from these Tel Aviv branches (around Yigal Alon / La Guardia):
+**Scope:** Collects diaper and baby food data from these Tel Aviv branches (around Yigal Alon / La Guardia / Moshe Dayan):
 
 | Branch | Portal | Status |
 | --- | --- | --- |
@@ -69,7 +69,7 @@
 | Shufersal Deal Yigal Alon | prices.shufersal.co.il | Configured, not verified yet (the site doesn't answer outside Israel) |
 | Super-Pharm Yigal Alon (2 branches) | prices.super-pharm.co.il | Blocked: a bot challenge (Reblaze) rejects scripted and headless-browser requests from cloud IPs |
 | Carrefour La Guardia (store 205, La Guardia 78) | prices.carrefour.co.il | Verified live |
-| Good Pharm La Guardia | goodpharm.binaprojects.com | Portal verified live; no La Guardia branch in Good Pharm's Stores file, so the branch still needs choosing |
+| Good Pharm Moshe Dayan (store 852, Moshe Dayan 66) | goodpharm.binaprojects.com | Verified live |
 
 Store codes that aren't known yet are looked up automatically on the first ingestion and saved.
 
@@ -87,7 +87,7 @@ Store codes that aren't known yet are looked up automatically on the first inges
 
 - [ ] Deployed on AWS (database on AWS as well): see [docs/aws-deployment.md](docs/aws-deployment.md)
 - [ ] Available online
-- [ ] Daily price collection: the scheduled job and real store feeds are in place (Tiv Taam, Osher Ad, Yochananof and Carrefour verified); Shufersal, Super-Pharm and Good Pharm are still open
+- [ ] Daily price collection: the scheduled job and real store feeds are in place (Tiv Taam, Osher Ad, Yochananof, Carrefour and Good Pharm verified); Shufersal and Super-Pharm are still open
 - [ ] Daily notification (if relevant): browser push and Telegram alerts are in place; needs deployment (push needs HTTPS)
 
 ## Technical Stack
@@ -207,10 +207,9 @@ from `main`. See [deploy/README.md](deploy/README.md).
 ## Roadmap
 
 - [x] Real data: per-chain discovery of the latest `PriceFull` / `PromoFull` files, and store codes from each chain's Stores file
-- [x] Verify the Yochananof and Carrefour portals against live data
+- [x] Verify the Yochananof, Carrefour and Good Pharm portals against live data
 - [ ] Shufersal: verify from an Israeli IP (e.g. AWS il-central-1)
 - [ ] Super-Pharm: get past the Reblaze bot challenge, or find another source
-- [ ] Good Pharm: pick the branch to track (none on La Guardia)
 - [ ] Deploy to AWS
 - [x] Browser push alerts for real deals on starred products
 - [ ] WhatsApp notifier
