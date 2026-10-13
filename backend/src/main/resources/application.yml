@@ -56,9 +56,9 @@ tracker:
           password: ${OSHER_AD_PASSWORD:}
         YOCHANANOF:
           type: CERBERUS
-          url: ${YOCHANANOF_PORTAL_URL:https://publishprices.co.il/supershuk}
-          username: ${YOCHANANOF_USERNAME:readonly}
-          password: ${YOCHANANOF_PASSWORD:123456}
+          url: ${YOCHANANOF_PORTAL_URL:https://url.publishedprices.co.il}
+          username: ${YOCHANANOF_USERNAME:yohananof}
+          password: ${YOCHANANOF_PASSWORD:}
         GOOD_PHARM:
           type: BINA
           url: https://goodpharm.binaprojects.com
@@ -72,7 +72,8 @@ tracker:
           max-pages: 30
         CARREFOUR:
           type: WEB_INDEX
-          url: https://prices.carrefour.co.il/
+          # The page lists one day's files (today when date is left out).
+          url: https://prices.carrefour.co.il/?date={dateCompact}
           download-url: https://prices.carrefour.co.il/{fileDate}/{name}
   notifications:
     telegram:

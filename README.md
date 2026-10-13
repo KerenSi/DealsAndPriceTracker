@@ -64,11 +64,11 @@
 | --- | --- | --- |
 | Tiv Taam Yigal Alon (store 080, Yigal Alon 94) | publishedprices.co.il (Cerberus) | Verified live |
 | Osher Ad Yigal Alon (store 024, Kreminitzky 3) | publishedprices.co.il (Cerberus) | Verified live |
-| Yochananof Yigal Alon | publishprices.co.il/supershuk (Cerberus) | Configured, not verified yet |
-| Shufersal Deal Yigal Alon | prices.shufersal.co.il | Configured, not verified yet |
-| Super-Pharm Yigal Alon (2 branches) | prices.super-pharm.co.il | Configured, not verified yet |
-| Carrefour La Guardia | prices.carrefour.co.il | Configured, not verified yet |
-| Good Pharm La Guardia | goodpharm.binaprojects.com | Configured, not verified yet |
+| Yochananof Yigal Alon (store 027, Yigal Alon 57) | publishedprices.co.il (Cerberus) | Verified live |
+| Shufersal Deal Yigal Alon | prices.shufersal.co.il | Configured, not verified yet (the site doesn't answer outside Israel) |
+| Super-Pharm Yigal Alon (2 branches) | prices.super-pharm.co.il | Blocked: a bot challenge (Reblaze) rejects scripted and headless-browser requests from cloud IPs |
+| Carrefour La Guardia (store 205, La Guardia 78) | prices.carrefour.co.il | Verified live |
+| Good Pharm La Guardia | goodpharm.binaprojects.com | Portal verified live; no La Guardia branch in Good Pharm's Stores file, so the branch still needs choosing |
 
 Store codes that aren't known yet are looked up automatically on the first ingestion and saved.
 
@@ -86,7 +86,7 @@ Store codes that aren't known yet are looked up automatically on the first inges
 
 - [ ] Deployed on AWS (database on AWS as well): see [docs/aws-deployment.md](docs/aws-deployment.md)
 - [ ] Available online
-- [ ] Daily price collection: the scheduled job and real store feeds are in place (Tiv Taam and Osher Ad verified); the other chains' portals still need a live check
+- [ ] Daily price collection: the scheduled job and real store feeds are in place (Tiv Taam, Osher Ad, Yochananof and Carrefour verified); Shufersal, Super-Pharm and Good Pharm are still open
 - [ ] Daily notification (if relevant): Telegram alerts are in place; needs deployment and a bot token
 
 ## Technical Stack
@@ -194,7 +194,10 @@ Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegr
 ## Roadmap
 
 - [x] Real data: per-chain discovery of the latest `PriceFull` / `PromoFull` files, and store codes from each chain's Stores file
-- [ ] Verify the Yochananof, Shufersal, Super-Pharm, Carrefour and Good Pharm portals against live data
+- [x] Verify the Yochananof and Carrefour portals against live data
+- [ ] Shufersal: verify from an Israeli IP (e.g. AWS il-central-1)
+- [ ] Super-Pharm: get past the Reblaze bot challenge, or find another source
+- [ ] Good Pharm: pick the branch to track (none on La Guardia)
 - [ ] Deploy to AWS
 - [ ] UI for subscribing to alerts
 - [ ] WhatsApp and Web Push notifiers
