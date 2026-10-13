@@ -73,7 +73,8 @@
 
 - [x] See the product list
 - [x] Choose a product and see its price table (plus a 60-day price history chart)
-- [x] Insights, e.g. *"Cheapest diaper is `<brand>` in `<store>`"*, compared per diaper / per 100 g and within the same diaper size
+- [x] Insights: every real deal on top, then *"Cheapest diaper is `<brand>` in `<store>`"* (per diaper / per 100 g, within the same diaper size or formula stage) for the products you starred; at least 2 cheapest insights, up to 4 insights in total when there are few deals
+- [x] Accounts (email + password). Per user: star products, mark products as not interesting (their deals and prices are left out of insights), and a "show similar products" toggle for the cheapest insights
 - [x] In-app chat to ask questions (Claude, grounded in the current price table)
 
 ### Definition of Done
@@ -106,7 +107,8 @@ docs/      Deployment notes
 | --- | --- |
 | `ingestion` | `PriceSource` interface, `SamplePriceSource`, `TransparencyPriceSource` + `TransparencyFileParser`, `IngestionService`, `DailyJob` |
 | `deals` | `DealDetector` and `PriceAnalysisService` (latest price + history → deal evaluation and unit price) |
-| `insights` | Cheapest per unit by category and size, genuine deals, suspicious sales |
+| `insights` | Genuine deals first, then cheapest per unit for the sizes / stages the user watches, skipping products marked not interesting |
+| `auth` | `AuthService` (accounts, BCrypt passwords, bearer-token sessions) and `PreferencesService` (product marks, settings) |
 | `notification` | `Notifier` interface, `TelegramNotifier`, `DealAlertService` |
 | `chat` | `ChatService`: Claude via the Anthropic Java SDK |
 | `api` | REST controllers |
@@ -173,7 +175,11 @@ Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegr
 | GET | `/api/products?category=DIAPERS\|BABY_FOOD&q=` | Product list with lowest price |
 | GET | `/api/products/{id}` | Price table across stores, with deal evaluation |
 | GET | `/api/products/{id}/history?days=60` | Price history |
-| GET | `/api/insights` | Insights |
+| GET | `/api/insights` | Insights (send the bearer token for personal insights) |
+| POST | `/api/auth/register`, `/api/auth/login` | `{ email, password }` → `{ token, expiresAt, user }` |
+| POST | `/api/auth/logout`, GET `/api/auth/me` | `Authorization: Bearer <token>` |
+| PUT / DELETE | `/api/me/products/{productId}/interest` | `{ interest: "WATCHED" \| "NOT_INTERESTED" }`, or clear the mark (bearer token required) |
+| PUT | `/api/me/settings` | `{ showSimilarProducts }` (bearer token required) |
 | GET | `/api/stores` | Tracked stores |
 | POST | `/api/chat` | `{ "messages": [{ "role": "user", "content": "..." }] }` |
 | POST | `/api/alerts` | `{ productId, channel: "TELEGRAM", recipientId, targetDiscountPercentage }` |

@@ -10,6 +10,7 @@ import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.OutputConfig;
 import com.anthropic.models.messages.StopReason;
+import com.dealstracker.auth.UserPreferences;
 import com.dealstracker.config.TrackerProperties;
 import com.dealstracker.deals.ListingAnalysis;
 import com.dealstracker.deals.PriceAnalysisService;
@@ -124,7 +125,7 @@ public class ChatService {
                     deal)).append('\n');
         }
         sb.append("\n## Insights\n");
-        for (Insight i : insights.insights()) {
+        for (Insight i : insights.insights(UserPreferences.ANONYMOUS)) {
             sb.append("- ").append(i.message()).append('\n');
         }
         return sb.toString();

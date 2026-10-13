@@ -5,10 +5,13 @@ import com.dealstracker.api.Dtos.ProductDetail;
 import com.dealstracker.api.Dtos.ProductSummary;
 import com.dealstracker.api.Dtos.StoreDto;
 import com.dealstracker.api.Dtos.StorePrice;
+import com.dealstracker.auth.PreferencesService;
+import com.dealstracker.auth.UserPreferences;
 import com.dealstracker.deals.ListingAnalysis;
 import com.dealstracker.deals.PriceAnalysisService;
 import com.dealstracker.deals.PricePoint;
 import com.dealstracker.domain.Category;
+import com.dealstracker.domain.Interest;
 import com.dealstracker.domain.Product;
 import com.dealstracker.domain.Store;
 import com.dealstracker.repository.ProductListingRepository;
@@ -18,9 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,27 +38,34 @@ public class ProductController {
     private final ProductRepository products;
     private final ProductListingRepository listings;
     private final PriceAnalysisService analysis;
+    private final PreferencesService preferences;
 
     public ProductController(ProductRepository products, ProductListingRepository listings,
-                             PriceAnalysisService analysis) {
+                             PriceAnalysisService analysis, PreferencesService preferences) {
         this.products = products;
         this.listings = listings;
         this.analysis = analysis;
+        this.preferences = preferences;
     }
 
     @GetMapping
     public List<ProductSummary> list(@RequestParam(required = false) Category category,
-                                     @RequestParam(required = false) String q) {
+                                     @RequestParam(required = false) String q,
+                                     @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false)
+                                     String authorization) {
+        UserPreferences prefs = preferences.forRequest(authorization);
         Map<UUID, List<ListingAnalysis>> byProduct = analysis.analyzeAll().stream()
                 .collect(Collectors.groupingBy(a -> a.product().getId()));
         String query = q == null || q.isBlank() ? null : q.trim();
         return products.search(category, query).stream()
-                .map(p -> summary(p, byProduct.getOrDefault(p.getId(), List.of())))
+                .map(p -> summary(p, byProduct.getOrDefault(p.getId(), List.of()), prefs.interestIn(p.getId())))
                 .toList();
     }
 
     @GetMapping("/{id}")
-    public ProductDetail get(@PathVariable UUID id) {
+    public ProductDetail get(@PathVariable UUID id,
+                             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false)
+                             String authorization) {
         Product product = products.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         List<ListingAnalysis> analyses = analysis.analyzeProduct(id);
@@ -63,7 +75,8 @@ public class ProductController {
                         a.unitLabel(), a.latest().isPromotion(), a.latest().getPromotionDescription(),
                         a.latest().getScrapedAt(), a.evaluation()))
                 .toList();
-        return new ProductDetail(summary(product, analyses), prices);
+        Interest interest = preferences.forRequest(authorization).interestIn(id);
+        return new ProductDetail(summary(product, analyses, interest), prices);
     }
 
     @GetMapping("/{id}/history")
@@ -77,7 +90,7 @@ public class ProductController {
                 .toList();
     }
 
-    private static ProductSummary summary(Product p, List<ListingAnalysis> analyses) {
+    private static ProductSummary summary(Product p, List<ListingAnalysis> analyses, Interest interest) {
         ListingAnalysis cheapest = analyses.stream()
                 .min(Comparator.comparing((ListingAnalysis a) -> a.evaluation().effectivePrice()))
                 .orElse(null);
@@ -88,7 +101,8 @@ public class ProductController {
                 cheapest == null ? null : cheapest.unitPrice(),
                 cheapest == null ? null : cheapest.unitLabel(),
                 analyses.size(),
-                analyses.stream().anyMatch(a -> a.evaluation().genuineDeal()));
+                analyses.stream().anyMatch(a -> a.evaluation().genuineDeal()),
+                interest);
     }
 
     static StoreDto store(Store s) {

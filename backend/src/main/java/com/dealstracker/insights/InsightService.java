@@ -1,20 +1,32 @@
 package com.dealstracker.insights;
 
+import com.dealstracker.auth.UserPreferences;
 import com.dealstracker.deals.ListingAnalysis;
 import com.dealstracker.deals.PriceAnalysisService;
 import com.dealstracker.domain.Category;
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
-/** Produces "cheapest X is Y in Z" style insights from the latest prices. */
+/**
+ * Produces the home-page insights from the latest prices: every real deal first, then "cheapest X is Y in Z"
+ * for the categories / sizes of the products the user watches. Products the user marked as not interesting
+ * are left out entirely, and suspicious sales are not shown.
+ */
 @Service
 public class InsightService {
+
+    /** Aim for this many insights; more only when there are more real deals than that. */
+    public static final int TARGET_INSIGHTS = 4;
+    /** "Cheapest" insights shown even on a day with many deals. */
+    public static final int MIN_CHEAPEST = 2;
 
     private final PriceAnalysisService analysis;
 
@@ -22,46 +34,57 @@ public class InsightService {
         this.analysis = analysis;
     }
 
-    public List<Insight> insights() {
-        List<ListingAnalysis> all = analysis.analyzeAll();
-        List<Insight> out = new ArrayList<>();
+    public List<Insight> insights(UserPreferences prefs) {
+        return build(analysis.analyzeAll(), prefs);
+    }
 
-        // Cheapest per unit in each category / size (diapers are only comparable within a size).
-        Map<String, List<ListingAnalysis>> groups = all.stream()
-                .filter(a -> a.unitPrice() != null)
-                .collect(Collectors.groupingBy(InsightService::groupKey, TreeMap::new, Collectors.toList()));
-        groups.forEach((key, items) -> items.stream()
-                .min(Comparator.comparing(ListingAnalysis::unitPrice))
-                .ifPresent(a -> out.add(new Insight("CHEAPEST_PER_UNIT",
-                        "Cheapest %s is %s at %s (%s ILS per %s)".formatted(
-                                key, a.product().getBrand(), a.store().getBranchName(),
-                                a.unitPrice().toPlainString(), a.unitLabel()),
-                        a.product().getId(), a.store().getBranchName(), a.evaluation().effectivePrice(),
-                        a.unitPrice(), a.unitLabel()))));
+    static List<Insight> build(List<ListingAnalysis> analyses, UserPreferences prefs) {
+        Set<UUID> watched = prefs.watched();
+        Set<UUID> notInterested = prefs.notInterested();
+        List<ListingAnalysis> all = analyses.stream()
+                .filter(a -> !notInterested.contains(a.product().getId()))
+                .toList();
 
-        all.stream()
+        List<Insight> deals = all.stream()
                 .filter(a -> a.evaluation().genuineDeal())
-                .sorted(Comparator.comparing((ListingAnalysis a) -> a.evaluation().dropPercent()).reversed())
-                .forEach(a -> out.add(new Insight("GENUINE_DEAL",
+                // Deals on watched products first, then the biggest drops.
+                .sorted(Comparator.comparing((ListingAnalysis a) -> !watched.contains(a.product().getId()))
+                        .thenComparing(a -> a.evaluation().dropPercent(),
+                                Comparator.nullsLast(Comparator.<BigDecimal>reverseOrder())))
+                .map(a -> new Insight("GENUINE_DEAL",
                         "Real deal: %s at %s is %s%% below its 30-day average (%s ILS)".formatted(
                                 a.product().getTitle(), a.store().getBranchName(),
                                 a.evaluation().dropPercent().toPlainString(),
                                 a.evaluation().effectivePrice().toPlainString()),
                         a.product().getId(), a.store().getBranchName(), a.evaluation().effectivePrice(),
-                        a.unitPrice(), a.unitLabel())));
+                        a.unitPrice(), a.unitLabel()))
+                .toList();
 
-        all.stream()
-                .filter(a -> a.evaluation().suspectedFakeDiscount())
-                .forEach(a -> out.add(new Insight("FAKE_DISCOUNT",
-                        "Suspicious sale: %s at %s - %s, real saving vs. 30-day average is %s%%".formatted(
-                                a.product().getTitle(), a.store().getBranchName(),
-                                a.evaluation().claimedDiscountPercent() == null
-                                        ? "advertised as a promotion"
-                                        : "advertised " + a.evaluation().claimedDiscountPercent() + "% off",
-                                Objects.toString(a.evaluation().dropPercent(), "?")),
-                        a.product().getId(), a.store().getBranchName(), a.evaluation().effectivePrice(),
-                        a.unitPrice(), a.unitLabel())));
-        return out;
+        // Cheapest per unit within the category / size of a watched product (diapers are only comparable
+        // within a size, formula within a stage). Without "show similar products" only watched products compete.
+        Set<String> watchedGroups = all.stream()
+                .filter(a -> watched.contains(a.product().getId()))
+                .map(InsightService::groupKey)
+                .collect(Collectors.toSet());
+        Map<String, List<ListingAnalysis>> groups = all.stream()
+                .filter(a -> a.unitPrice() != null)
+                .filter(a -> prefs.showSimilarProducts() || watched.contains(a.product().getId()))
+                .filter(a -> watchedGroups.contains(groupKey(a)))
+                .collect(Collectors.groupingBy(InsightService::groupKey, TreeMap::new, Collectors.toList()));
+        int cheapestCount = Math.max(MIN_CHEAPEST, TARGET_INSIGHTS - deals.size());
+        Stream<Insight> cheapest = groups.entrySet().stream()
+                .flatMap(e -> e.getValue().stream()
+                        .min(Comparator.comparing(ListingAnalysis::unitPrice))
+                        .map(a -> new Insight("CHEAPEST_PER_UNIT",
+                                "Cheapest %s is %s at %s (%s ILS per %s)".formatted(
+                                        e.getKey(), a.product().getBrand(), a.store().getBranchName(),
+                                        a.unitPrice().toPlainString(), a.unitLabel()),
+                                a.product().getId(), a.store().getBranchName(), a.evaluation().effectivePrice(),
+                                a.unitPrice(), a.unitLabel()))
+                        .stream())
+                .limit(cheapestCount);
+
+        return Stream.concat(deals.stream(), cheapest).toList();
     }
 
     private static String groupKey(ListingAnalysis a) {

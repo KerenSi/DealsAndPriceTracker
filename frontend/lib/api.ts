@@ -2,6 +2,8 @@
 
 export type Category = "DIAPERS" | "BABY_FOOD";
 
+export type Interest = "WATCHED" | "NOT_INTERESTED";
+
 export interface Store {
   id: string;
   chain: string;
@@ -23,6 +25,7 @@ export interface ProductSummary {
   unitLabel: string | null;
   storeCount: number;
   hasGenuineDeal: boolean;
+  interest: Interest | null;
 }
 
 export interface DealEvaluation {
@@ -65,7 +68,7 @@ export interface HistoryPoint {
 }
 
 export interface Insight {
-  type: "CHEAPEST_PER_UNIT" | "GENUINE_DEAL" | "FAKE_DISCOUNT";
+  type: "CHEAPEST_PER_UNIT" | "GENUINE_DEAL";
   message: string;
   productId: string;
   storeName: string;
@@ -76,26 +79,37 @@ export interface Insight {
 
 export const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BACKEND_URL}${path}`, { next: { revalidate: 300 } });
+export interface User {
+  id: string;
+  email: string;
+  showSimilarProducts: boolean;
+}
+
+// Pass the session token for anything that differs per user; those responses are never cached.
+async function get<T>(path: string, token?: string): Promise<T> {
+  const res = await fetch(
+    `${BACKEND_URL}${path}`,
+    token ? { headers: { authorization: `Bearer ${token}` }, cache: "no-store" } : { next: { revalidate: 300 } },
+  );
   if (!res.ok) {
     throw new Error(`GET ${path} failed: ${res.status}`);
   }
   return res.json() as Promise<T>;
 }
 
-export function getProducts(category?: Category, q?: string) {
+export function getProducts(category?: Category, q?: string, token?: string) {
   const params = new URLSearchParams();
   if (category) params.set("category", category);
   if (q) params.set("q", q);
   const qs = params.toString();
-  return get<ProductSummary[]>(`/api/products${qs ? `?${qs}` : ""}`);
+  return get<ProductSummary[]>(`/api/products${qs ? `?${qs}` : ""}`, token);
 }
 
-export const getProduct = (id: string) => get<ProductDetail>(`/api/products/${id}`);
+export const getProduct = (id: string, token?: string) => get<ProductDetail>(`/api/products/${id}`, token);
 export const getHistory = (id: string, days = 60) =>
   get<HistoryPoint[]>(`/api/products/${id}/history?days=${days}`);
-export const getInsights = () => get<Insight[]>("/api/insights");
+export const getInsights = (token?: string) => get<Insight[]>("/api/insights", token);
+export const getMe = (token: string) => get<User>("/api/auth/me", token);
 
 export const formatPrice = (v: number | null | undefined) => (v == null ? "—" : `₪${v.toFixed(2)}`);
 

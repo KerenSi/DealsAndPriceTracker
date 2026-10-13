@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { InsightsPanel } from "@/components/InsightsPanel";
+import { InterestButtons } from "@/components/InterestButtons";
+import { SimilarProductsToggle } from "@/components/SimilarProductsToggle";
 import { categoryLabel, formatPrice, getInsights, getProducts, type Category } from "@/lib/api";
+import { getCurrentUser, getSessionToken } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +15,22 @@ export default async function HomePage({
   searchParams: { category?: string; q?: string };
 }) {
   const category = (["DIAPERS", "BABY_FOOD"] as const).find((c) => c === searchParams.category);
-  const [products, insights] = await Promise.all([getProducts(category, searchParams.q), getInsights()]);
+  const token = getSessionToken();
+  const [products, insights, user] = await Promise.all([
+    getProducts(category, searchParams.q, token),
+    getInsights(token),
+    getCurrentUser(),
+  ]);
+  const loggedIn = user != null;
 
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Insights</h2>
-        <InsightsPanel insights={insights} />
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Insights</h2>
+          {user && <SimilarProductsToggle initial={user.showSimilarProducts} />}
+        </div>
+        <InsightsPanel insights={insights} loggedIn={loggedIn} />
       </section>
 
       <section>
@@ -50,6 +62,7 @@ export default async function HomePage({
           <table className="w-full text-sm">
             <thead className="bg-slate-100 text-left text-slate-600">
               <tr>
+                <th className="w-16 px-3 py-2"></th>
                 <th className="px-3 py-2">Product</th>
                 <th className="px-3 py-2">Brand</th>
                 <th className="px-3 py-2">Size</th>
@@ -61,7 +74,13 @@ export default async function HomePage({
             </thead>
             <tbody>
               {products.map((p) => (
-                <tr key={p.id} className="border-t hover:bg-slate-50">
+                <tr
+                  key={p.id}
+                  className={`border-t hover:bg-slate-50 ${p.interest === "NOT_INTERESTED" ? "opacity-50" : ""}`}
+                >
+                  <td className="px-3 py-2">
+                    <InterestButtons productId={p.id} interest={p.interest} loggedIn={loggedIn} />
+                  </td>
                   <td className="px-3 py-2" dir="auto">
                     <Link href={`/products/${p.id}`} className="font-medium hover:underline">
                       {p.title}
@@ -83,7 +102,7 @@ export default async function HomePage({
               ))}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
                     No products found.
                   </td>
                 </tr>

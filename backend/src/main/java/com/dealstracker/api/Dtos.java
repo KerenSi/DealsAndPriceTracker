@@ -3,11 +3,13 @@ package com.dealstracker.api;
 import com.dealstracker.chat.ChatMessage;
 import com.dealstracker.deals.DealEvaluation;
 import com.dealstracker.domain.Category;
+import com.dealstracker.domain.Interest;
 import com.dealstracker.domain.NotificationChannel;
 import com.dealstracker.domain.UnitType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -29,7 +31,7 @@ public final class Dtos {
             UUID id, String title, String brand, Category category, String sizeLabel,
             BigDecimal unitQuantity, UnitType unitType,
             BigDecimal lowestPrice, String lowestPriceStore, BigDecimal lowestUnitPrice, String unitLabel,
-            int storeCount, boolean hasGenuineDeal) {
+            int storeCount, boolean hasGenuineDeal, Interest interest) {
     }
 
     public record StorePrice(
@@ -61,5 +63,22 @@ public final class Dtos {
     public record AlertDto(UUID id, UUID productId, String productTitle, BigDecimal targetDiscountPercentage,
                            NotificationChannel channel, String recipientId, boolean active,
                            OffsetDateTime lastNotifiedAt) {
+    }
+
+    public record AuthRequest(
+            @NotBlank @Email @Size(max = 255) String email,
+            @NotBlank @Size(min = 8, max = 72) String password) {
+    }
+
+    public record UserDto(UUID id, String email, boolean showSimilarProducts) {
+    }
+
+    public record SettingsRequest(boolean showSimilarProducts) {
+    }
+
+    public record InterestRequest(@NotNull Interest interest) {
+    }
+
+    public record AuthResponse(String token, OffsetDateTime expiresAt, UserDto user) {
     }
 }
