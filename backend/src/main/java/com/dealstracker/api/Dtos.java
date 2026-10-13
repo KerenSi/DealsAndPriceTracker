@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -80,5 +81,23 @@ public final class Dtos {
     }
 
     public record AuthResponse(String token, OffsetDateTime expiresAt, UserDto user) {
+    }
+
+    public record PushKeys(@NotBlank @Size(max = 200) String p256dh, @NotBlank @Size(max = 100) String auth) {
+    }
+
+    /** The JSON a browser's {@code PushSubscription.toJSON()} produces (expirationTime is ignored). */
+    public record PushSubscriptionRequest(
+            @NotBlank @Size(max = 1024) @Pattern(regexp = "https://.+") String endpoint,
+            @NotNull @Valid PushKeys keys) {
+    }
+
+    public record PushUnsubscribeRequest(@NotBlank String endpoint) {
+    }
+
+    public record PushPublicKey(String publicKey) {
+    }
+
+    public record PushTestResult(int delivered) {
     }
 }

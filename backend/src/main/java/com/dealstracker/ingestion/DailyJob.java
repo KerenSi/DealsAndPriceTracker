@@ -2,6 +2,7 @@ package com.dealstracker.ingestion;
 
 import com.dealstracker.config.TrackerProperties;
 import com.dealstracker.notification.DealAlertService;
+import com.dealstracker.notification.push.DealPushService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -17,11 +18,14 @@ public class DailyJob {
 
     private final IngestionService ingestion;
     private final DealAlertService alerts;
+    private final DealPushService push;
     private final TrackerProperties props;
 
-    public DailyJob(IngestionService ingestion, DealAlertService alerts, TrackerProperties props) {
+    public DailyJob(IngestionService ingestion, DealAlertService alerts, DealPushService push,
+                    TrackerProperties props) {
         this.ingestion = ingestion;
         this.alerts = alerts;
+        this.push = push;
         this.props = props;
     }
 
@@ -31,6 +35,7 @@ public class DailyJob {
         log.info("Daily ingestion finished: {}", result);
         int sent = alerts.evaluateAndNotify();
         log.info("Sent {} deal alerts", sent);
+        log.info("Pushed {} deal notifications to browsers", push.pushDeals());
     }
 
     @EventListener(ApplicationReadyEvent.class)
