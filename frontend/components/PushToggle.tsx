@@ -49,6 +49,27 @@ function save(subscription: PushSubscription) {
   });
 }
 
+// Where notifications for the browser can be turned off on this device, beyond the site's own permission.
+function notificationSettingsTip() {
+  const ua = navigator.userAgent;
+  if (/Android/.test(ua)) {
+    return (
+      "check Android Settings, Apps, Chrome, Notifications: notifications must be allowed, including the Sites " +
+      "category. Also check that Do Not Disturb is off and battery saver isn't restricting Chrome."
+    );
+  }
+  if (/iPhone|iPad/.test(ua)) {
+    return "check Settings, Notifications, and this site's Home Screen app, and that Focus is off.";
+  }
+  if (/Windows/.test(ua)) {
+    return "check Windows Settings, System, Notifications: your browser must be allowed, and Do Not Disturb off.";
+  }
+  if (/Mac/.test(ua)) {
+    return "check System Settings, Notifications: your browser must be allowed, and Do Not Disturb or Focus off.";
+  }
+  return "check that your device allows notifications from this browser and that Do Not Disturb is off.";
+}
+
 // Browser notifications for real deals on starred products.
 export function PushToggle() {
   const [status, setStatus] = useState<Status>("loading");
@@ -135,10 +156,7 @@ export function PushToggle() {
           : { status: "FAILED", detail: "Couldn't register this browser." };
       }
       if (result.status === "DELIVERED") {
-        setNote(
-          "Test notification sent. If nothing pops up, check that your computer allows notifications from this browser " +
-            "(on a Mac: System Settings, Notifications) and that Do Not Disturb or Focus is off.",
-        );
+        setNote(`Test notification sent. If nothing pops up, ${notificationSettingsTip()}`);
       } else {
         setNote(`The test notification didn't go through${result.detail ? `: ${result.detail}` : "."}`);
       }
