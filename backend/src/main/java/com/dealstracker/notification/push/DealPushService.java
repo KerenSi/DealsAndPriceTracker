@@ -93,10 +93,47 @@ public class DealPushService {
         return delivered;
     }
 
-    /** Sends a sample notification to the user's browsers; returns how many received it. */
-    public int sendTest(UUID userId) {
-        return sendToAll(subscriptions.findByUserId(userId), new PushMessage("Deal alerts are on",
-                "You'll get a notification here when a starred product has a real deal.", "/", "test"));
+    /**
+     * How a test notification went. {@code NOT_REGISTERED} means the server has no subscription for that
+     * browser (or it just expired and was forgotten), so the browser should subscribe again.
+     */
+    public record TestOutcome(Status status, int delivered, String detail) {
+        public enum Status { DELIVERED, NOT_REGISTERED, FAILED }
+    }
+
+    static final PushMessage TEST_MESSAGE = new PushMessage("Deal alerts are on",
+            "You'll get a notification here when a starred product has a real deal.", "/", "test");
+
+    /**
+     * Sends a sample notification to one of the user's browsers, identified by its push endpoint, or to all
+     * of them when {@code endpoint} is null.
+     */
+    public TestOutcome sendTest(UUID userId, String endpoint) {
+        List<PushSubscription> targets = endpoint == null
+                ? subscriptions.findByUserId(userId)
+                : subscriptions.findByEndpoint(endpoint).filter(s -> s.getUserId().equals(userId)).stream().toList();
+        if (targets.isEmpty()) {
+            return new TestOutcome(TestOutcome.Status.NOT_REGISTERED, 0, null);
+        }
+        String payload = payload(TEST_MESSAGE);
+        int delivered = 0;
+        int gone = 0;
+        String problem = null;
+        for (PushSubscription subscription : targets) {
+            WebPushSender.Delivery delivery = deliver(subscription, payload);
+            switch (delivery.result()) {
+                case DELIVERED -> delivered++;
+                case GONE -> gone++;
+                case FAILED -> problem = delivery.detail();
+            }
+        }
+        if (delivered > 0) {
+            return new TestOutcome(TestOutcome.Status.DELIVERED, delivered, null);
+        }
+        if (problem == null && gone > 0) {
+            return new TestOutcome(TestOutcome.Status.NOT_REGISTERED, 0, null);
+        }
+        return new TestOutcome(TestOutcome.Status.FAILED, 0, problem);
     }
 
     /** For each watched product with a real deal, its best deal, unless that deal was already pushed. */
@@ -131,25 +168,32 @@ public class DealPushService {
     }
 
     private int sendToAll(List<PushSubscription> targets, PushMessage message) {
-        String payload;
-        try {
-            payload = json.writeValueAsString(message);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException(e);
-        }
+        String payload = payload(message);
         int delivered = 0;
         for (PushSubscription subscription : targets) {
-            switch (sender.send(subscription, payload)) {
-                case DELIVERED -> delivered++;
-                case GONE -> {
-                    log.info("Removing expired push subscription {}", subscription.getId());
-                    subscriptions.delete(subscription);
-                }
-                case FAILED -> {
-                }
+            if (deliver(subscription, payload).result() == WebPushSender.Result.DELIVERED) {
+                delivered++;
             }
         }
         return delivered;
+    }
+
+    /** Sends one message, forgetting the subscription if the browser has dropped it. */
+    private WebPushSender.Delivery deliver(PushSubscription subscription, String payload) {
+        WebPushSender.Delivery delivery = sender.send(subscription, payload);
+        if (delivery.result() == WebPushSender.Result.GONE) {
+            log.info("Removing expired push subscription {}", subscription.getId());
+            subscriptions.delete(subscription);
+        }
+        return delivery;
+    }
+
+    private String payload(PushMessage message) {
+        try {
+            return json.writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private void record(UUID userId, ListingAnalysis deal, PushDealNotification last, OffsetDateTime now) {

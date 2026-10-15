@@ -11,6 +11,8 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(data.title || "Deals & Price Tracker", {
       body: data.body || "",
       tag: data.tag,
+      // A notification replacing an earlier one with the same tag would otherwise arrive silently.
+      renotify: Boolean(data.tag),
       data: { url: data.url || "/" },
       lang: "he",
       dir: "auto",

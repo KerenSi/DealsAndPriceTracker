@@ -22,6 +22,25 @@ async function serverKey() {
   return keyBytes(publicKey);
 }
 
+// A fresh subscription for this browser, replacing any old one.
+async function subscribeAgain() {
+  const registration = await navigator.serviceWorker.ready;
+  await (await registration.pushManager.getSubscription())?.unsubscribe();
+  return registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: await serverKey() });
+}
+
+type TestResult = { status: "DELIVERED" | "NOT_REGISTERED" | "FAILED"; detail: string | null };
+
+// Sends a test notification to this browser only, so another browser of the same account can't mask a problem here.
+async function sendTest(subscription: PushSubscription): Promise<TestResult> {
+  const res = await fetch("/api/push/test", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
+  });
+  return res.ok ? res.json() : { status: "FAILED", detail: `The server answered ${res.status}.` };
+}
+
 function save(subscription: PushSubscription) {
   return fetch("/api/push/subscription", {
     method: "PUT",
@@ -70,12 +89,7 @@ export function PushToggle() {
         setStatus(Notification.permission === "denied" ? "denied" : "off");
         return;
       }
-      const registration = await navigator.serviceWorker.ready;
-      await (await registration.pushManager.getSubscription())?.unsubscribe();
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: await serverKey(),
-      });
+      const subscription = await subscribeAgain();
       if ((await save(subscription)).ok) {
         setStatus("on");
       } else {
@@ -108,10 +122,31 @@ export function PushToggle() {
 
   async function test() {
     setBusy(true);
-    const res = await fetch("/api/push/test", { method: "POST" });
-    const delivered = res.ok ? ((await res.json()) as { delivered: number }).delivered : 0;
-    setNote(delivered > 0 ? "Test notification sent." : "The test notification didn't go through.");
-    setBusy(false);
+    setNote(null);
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      let subscription = await registration.pushManager.getSubscription();
+      let result: TestResult = subscription ? await sendTest(subscription) : { status: "NOT_REGISTERED", detail: null };
+      if (result.status === "NOT_REGISTERED") {
+        // The browser or push service dropped this subscription: make a new one and try once more.
+        subscription = await subscribeAgain();
+        result = (await save(subscription)).ok
+          ? await sendTest(subscription)
+          : { status: "FAILED", detail: "Couldn't register this browser." };
+      }
+      if (result.status === "DELIVERED") {
+        setNote(
+          "Test notification sent. If nothing pops up, check that your computer allows notifications from this browser " +
+            "(on a Mac: System Settings, Notifications) and that Do Not Disturb or Focus is off.",
+        );
+      } else {
+        setNote(`The test notification didn't go through${result.detail ? `: ${result.detail}` : "."}`);
+      }
+    } catch {
+      setNote("The test notification didn't go through. Try turning Deal alerts off and on.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const hint: Partial<Record<Status, string>> = {

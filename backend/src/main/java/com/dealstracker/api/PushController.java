@@ -2,6 +2,7 @@ package com.dealstracker.api;
 
 import com.dealstracker.api.Dtos.PushPublicKey;
 import com.dealstracker.api.Dtos.PushSubscriptionRequest;
+import com.dealstracker.api.Dtos.PushTestRequest;
 import com.dealstracker.api.Dtos.PushTestResult;
 import com.dealstracker.api.Dtos.PushUnsubscribeRequest;
 import com.dealstracker.auth.AuthService;
@@ -94,8 +95,10 @@ public class PushController {
     }
 
     @PostMapping("/api/me/push-subscription/test")
-    public PushTestResult test(
-            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
-        return new PushTestResult(push.sendTest(auth.requireUser(authorization).getId()));
+    public PushTestResult test(@Valid @RequestBody(required = false) PushTestRequest req,
+                               @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+        User user = auth.requireUser(authorization);
+        DealPushService.TestOutcome outcome = push.sendTest(user.getId(), req == null ? null : req.endpoint());
+        return new PushTestResult(outcome.status().name(), outcome.delivered(), outcome.detail());
     }
 }
