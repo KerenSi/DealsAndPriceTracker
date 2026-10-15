@@ -30,3 +30,8 @@ output "github_variables" {
     AWS_INSTANCE_ID     = aws_instance.web.id
   }
 }
+
+output "operator_policy_name" {
+  description = "Attach this IAM policy to a teammate's user to give them access to this project only."
+  value       = aws_iam_policy.operator.name
+}
