@@ -31,7 +31,7 @@ GitHub Actions (push to main) ──▶ ECR images ──▶ SSM Run Command on 
 | Data transfer (first 100 GB out free) | 0 |
 | **Total** | **≈ 25** |
 
-Claude API usage for the chat and deal checks is billed separately by Anthropic.
+Claude API usage for the chat is billed separately by Anthropic. The chat runs on Claude Haiku by default, which keeps each question well under a cent, so a $5 prepaid credit covers thousands of questions.
 A managed setup (ECS Fargate or App Runner + RDS + load balancer) would be about
 $60–80/month for the same app; the Terraform here can grow into that later.
 

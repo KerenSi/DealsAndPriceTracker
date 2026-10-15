@@ -83,5 +83,6 @@ tracker:
       private-key: ${VAPID_PRIVATE_KEY:}
       subject: ${VAPID_SUBJECT:https://github.com/KerenSi/DealsAndPriceTracker}
   chat:
-    model: ${CHAT_MODEL:claude-opus-5-5}
+    # Haiku keeps each question well under a cent even with the full price table; set CHAT_MODEL to switch.
+    model: ${CHAT_MODEL:claude-haiku-5-5}
     max-tokens: 16000

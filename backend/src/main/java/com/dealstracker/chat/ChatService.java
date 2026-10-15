@@ -71,10 +71,12 @@ public class ChatService {
                 .model(config.model())
                 .maxTokens(config.maxTokens())
                 .system(INSTRUCTIONS + "\n\n" + priceContext())
-                .outputConfig(OutputConfig.builder().effort(OutputConfig.Effort.LOW).build())
-                // If a safety classifier declines, let the API retry on a fallback model.
-                .putAdditionalHeader("anthropic-beta", "server-side-fallback-2026-07-01")
-                .putAdditionalBodyProperty("fallbacks", JsonValue.from("default"));
+                .outputConfig(OutputConfig.builder().effort(OutputConfig.Effort.LOW).build());
+        if (!config.model().startsWith("claude-haiku")) {
+            // If a safety classifier declines, let the API retry on a fallback model (Haiku has no fallback).
+            params.putAdditionalHeader("anthropic-beta", "server-side-fallback-2026-07-01")
+                    .putAdditionalBodyProperty("fallbacks", JsonValue.from("default"));
+        }
         for (ChatMessage m : conversation) {
             if ("assistant".equals(m.role())) {
                 params.addAssistantMessage(m.content());
