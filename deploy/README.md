@@ -86,6 +86,11 @@ pointing at `terraform output elastic_ip`, then redeploy.
 
 - **Logs:** `aws ssm start-session --target <instance-id>`, then
   `cd /opt/dealstracker && docker compose -f compose.prod.yml logs -f backend`.
+- **Database:** open a shell on the host (EC2 → Instances → `dealstracker-web` → Connect →
+  Session Manager), then
+  `sudo docker exec -it dealstracker-db-1 psql -U dealstracker dealstracker`.
+  Each ingestion run shows up as a burst of rows in `price_snapshots`:
+  `SELECT date_trunc('hour', scraped_at) AS run, count(*) FROM price_snapshots GROUP BY 1 ORDER BY 1 DESC LIMIT 10;`
 - **Backups:** the disk (including Postgres) is snapshotted daily at 01:00 UTC and kept
   for 7 days. Restore by creating a volume from a snapshot in the EC2 console.
 - **Tear down:** `terraform destroy` deletes everything, including the database.

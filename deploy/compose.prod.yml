@@ -19,6 +19,9 @@ services:
   backend:
     image: ${REGISTRY}/dealstracker-backend:${IMAGE_TAG}
     restart: unless-stopped
+    # Every /dealstracker/* SSM parameter (written to .env by remote-deploy.sh) reaches the
+    # backend, e.g. SAMPLE_SOURCE_ENABLED or TRANSPARENCY_SOURCE_ENABLED. The values below win.
+    env_file: .env
     depends_on:
       db:
         condition: service_healthy
