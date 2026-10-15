@@ -31,7 +31,7 @@ GitHub Actions (push to main) ──▶ ECR images ──▶ SSM Run Command on 
 | Data transfer (first 100 GB out free) | 0 |
 | **Total** | **≈ 25** |
 
-Claude API usage for the chat is billed separately by Anthropic. The chat runs on Claude Haiku by default, which keeps each question well under a cent, so a $5 prepaid credit covers thousands of questions.
+The chat uses Google's free Gemini tier by default (no charge within its rate limits). If you switch it to Claude, Anthropic bills it separately; Claude Haiku keeps each question well under a cent.
 A managed setup (ECS Fargate or App Runner + RDS + load balancer) would be about
 $60–80/month for the same app; the Terraform here can grow into that later.
 
@@ -62,8 +62,10 @@ Then:
 2. **API keys** go straight into Parameter Store, never into git or Terraform:
    ```bash
    aws ssm put-parameter --region eu-central-1 --type SecureString \
-     --name /dealstracker/ANTHROPIC_API_KEY --value 'sk-ant-...'
+     --name /dealstracker/GEMINI_API_KEY --value 'AIza...'
    ```
+   The chat uses Gemini's free tier; create the key at https://aistudio.google.com/apikey.
+   To use Claude instead, also store `CHAT_PROVIDER=claude` and `ANTHROPIC_API_KEY`.
    Any parameter under `/dealstracker/` becomes an env var on the next deploy (e.g. VAPID
    keys for push later).
 3. **Deploy.** Push to `main`, or run the *Deploy* workflow by hand. When it finishes,

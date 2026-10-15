@@ -83,6 +83,11 @@ tracker:
       private-key: ${VAPID_PRIVATE_KEY:}
       subject: ${VAPID_SUBJECT:https://github.com/KerenSi/DealsAndPriceTracker}
   chat:
-    # Haiku keeps each question well under a cent even with the full price table; set CHAT_MODEL to switch.
+    # gemini: Google's free tier (needs GEMINI_API_KEY). claude: the Anthropic API (needs ANTHROPIC_API_KEY).
+    provider: ${CHAT_PROVIDER:gemini}
+    # Haiku keeps each question well under a cent even with the full price table.
     model: ${CHAT_MODEL:claude-haiku-5-5}
     max-tokens: 16000
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-3.8-flash}

@@ -16,7 +16,10 @@ collection and daily notifications. Suggested setup:
 |---|---|
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | RDS connection (`jdbc:postgresql://<endpoint>:5432/dealstracker`) |
 | `ADMIN_TOKEN` | Shared secret for `/api/admin/*` and listing/deleting alerts |
-| `ANTHROPIC_API_KEY` | Enables the in-app chat |
+| `GEMINI_API_KEY` | Enables the in-app chat (Gemini free tier, the default) |
+| `GEMINI_MODEL` | Gemini model for the chat (default `gemini-3.8-flash`) |
+| `CHAT_PROVIDER` | `gemini` (default) or `claude` |
+| `ANTHROPIC_API_KEY` | Enables the chat when `CHAT_PROVIDER=claude` |
 | `TELEGRAM_BOT_TOKEN` | Enables Telegram alerts |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Optional. Browser push key pair (base64url); if unset, one is generated on first start and kept in the `web_push_keys` table. Don't change it once browsers have subscribed. |
 | `VAPID_SUBJECT` | Contact push services may use (`mailto:` or `https:` URL) |
