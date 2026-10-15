@@ -13,6 +13,7 @@ export interface Store {
 
 export interface ProductSummary {
   id: string;
+  barcode: string;
   title: string;
   brand: string | null;
   category: Category;

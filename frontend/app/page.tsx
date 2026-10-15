@@ -71,6 +71,7 @@ export default async function HomePage({
                 <th className="w-16 px-3 py-2"></th>
                 <th className="px-3 py-2">Product</th>
                 <th className="px-3 py-2">Brand</th>
+                <th className="px-3 py-2">Barcode</th>
                 <th className="px-3 py-2">Size</th>
                 <th className="px-3 py-2">Lowest price</th>
                 <th className="px-3 py-2">Per unit</th>
@@ -93,6 +94,7 @@ export default async function HomePage({
                     </Link>
                   </td>
                   <td className="px-3 py-2">{p.brand}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-slate-600">{p.barcode}</td>
                   <td className="px-3 py-2">{p.sizeLabel ?? "—"}</td>
                   <td className="px-3 py-2">{formatPrice(p.lowestPrice)}</td>
                   <td className="px-3 py-2">
@@ -108,7 +110,7 @@ export default async function HomePage({
               ))}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={9} className="px-3 py-6 text-center text-slate-500">
                     No products found.
                   </td>
                 </tr>
