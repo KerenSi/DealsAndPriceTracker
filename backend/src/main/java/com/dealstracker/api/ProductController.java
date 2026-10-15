@@ -94,7 +94,7 @@ public class ProductController {
         ListingAnalysis cheapest = analyses.stream()
                 .min(Comparator.comparing((ListingAnalysis a) -> a.evaluation().effectivePrice()))
                 .orElse(null);
-        return new ProductSummary(p.getId(), p.getTitle(), p.getBrand(), p.getCategory(), p.getSizeLabel(),
+        return new ProductSummary(p.getId(), p.getBarcode(), p.getTitle(), p.getBrand(), p.getCategory(), p.getSizeLabel(),
                 p.getUnitQuantity(), p.getUnitType(),
                 cheapest == null ? null : cheapest.evaluation().effectivePrice(),
                 cheapest == null ? null : cheapest.store().getBranchName(),

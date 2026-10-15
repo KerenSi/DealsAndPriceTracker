@@ -41,6 +41,9 @@ export default async function ProductPage({ params }: { params: { id: string } }
           {product.sizeLabel && ` · ${product.sizeLabel}`}
           {product.unitQuantity && ` · ${product.unitQuantity} ${product.unitType === "UNITS" ? "units" : "g"}`}
         </p>
+        <p className="text-sm text-slate-600">
+          Barcode: <span className="font-mono">{product.barcode}</span>
+        </p>
       </div>
 
       <section>

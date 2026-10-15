@@ -29,7 +29,7 @@ public final class Dtos {
     }
 
     public record ProductSummary(
-            UUID id, String title, String brand, Category category, String sizeLabel,
+            UUID id, String barcode, String title, String brand, Category category, String sizeLabel,
             BigDecimal unitQuantity, UnitType unitType,
             BigDecimal lowestPrice, String lowestPriceStore, BigDecimal lowestUnitPrice, String unitLabel,
             int storeCount, boolean hasGenuineDeal, Interest interest) {
