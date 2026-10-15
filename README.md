@@ -81,7 +81,7 @@ Store codes that aren't known yet are looked up automatically on the first inges
 - [x] Choose a product and see its price table (plus a 60-day price history chart)
 - [x] Insights: every real deal on top, then *"Cheapest diaper is `<brand>` in `<store>`"* (per diaper / per 100 g, within the same diaper size or formula stage) for the products you starred; at least 2 cheapest insights, up to 4 insights in total when there are few deals
 - [x] Accounts (email + password). Per user: star products, mark products as not interesting (their deals and prices are left out of insights), and a "show similar products" toggle for the cheapest insights
-- [x] In-app chat to ask questions (Claude, grounded in the current price table)
+- [x] In-app chat to ask questions (Gemini free tier or Claude, grounded in the current price table)
 
 ### Definition of Done
 
@@ -97,7 +97,7 @@ Store codes that aren't known yet are looked up automatically on the first inges
 | **Backend** | Java 21 + Spring Boot 3 (Spring Web, Spring Data JPA, Spring AI) | Java 21 + Spring Boot 3.5 (Web, Data JPA, Validation, Actuator), Flyway migrations |
 | **Frontend** | Next.js 14+ (App Router, React, Tailwind CSS, shadcn/ui) | Next.js 14 (App Router) + Tailwind CSS; shadcn/ui not added yet |
 | **Database** | PostgreSQL + pgvector (stores time-series price snapshots & product embeddings) | PostgreSQL 16; pgvector not used yet (no embeddings in the MVP) |
-| **AI Framework** | Spring AI (integrated with OpenAI GPT-4o / Claude / Gemini APIs) | Official Anthropic Java SDK (Claude) for the chat; deal detection is rule-based |
+| **AI Framework** | Spring AI (integrated with OpenAI GPT-4o / Claude / Gemini APIs) | Gemini REST API (free tier, default) or the official Anthropic Java SDK (Claude) for the chat; deal detection is rule-based |
 | **Web Scraping / Data Ingestion** | Playwright / JSoup / Official Supermarket Open APIs (Cerelac / Israeli Food Transparency Law Data) | Price Transparency Law files, found through each chain's portal (Cerberus, Bina Projects, download pages); synthetic source for development |
 | **Notifications** | Telegram Bot API / Web Push API / WhatsApp Green API | Web Push API (VAPID, implemented with the JDK only) + Telegram Bot API |
 
@@ -116,7 +116,7 @@ docs/      Deployment notes
 | `insights` | Genuine deals first, then cheapest per unit for the sizes / stages the user watches, skipping products marked not interesting |
 | `auth` | `AuthService` (accounts, BCrypt passwords, bearer-token sessions) and `PreferencesService` (product marks, settings) |
 | `notification` | `Notifier` interface, `TelegramNotifier`, `DealAlertService`; `notification.push`: Web Push encryption and VAPID (`WebPushCrypto`), `WebPushSender`, `DealPushService` |
-| `chat` | `ChatService`: Claude via the Anthropic Java SDK |
+| `chat` | `ChatService`: Gemini via its REST API (default) or Claude via the Anthropic Java SDK |
 | `api` | REST controllers |
 
 ## Database Schema
@@ -152,7 +152,7 @@ flowchart LR
     end
     alerts --> telegram[Telegram]
     alerts --> push[Browser push services]
-    chat <--> claude[Claude API]
+    chat <--> llm[Gemini or Claude API]
     frontend[Next.js frontend] <--> backend
 ```
 
@@ -176,7 +176,7 @@ curl -X POST -H "X-Admin-Token: devtoken" "http://localhost:8080/api/admin/backf
 curl -X POST -H "X-Admin-Token: devtoken" "http://localhost:8080/api/admin/ingest"
 ```
 
-Set `ANTHROPIC_API_KEY` to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegram alerts. Browser push works out of the box on `http://localhost:3000`; anywhere else the site must be served over HTTPS. On iPhone, web push only works after adding the site to the Home Screen. All configuration options are listed in [docs/aws-deployment.md](docs/aws-deployment.md).
+Set `GEMINI_API_KEY` (free from Google AI Studio) to enable chat and `TELEGRAM_BOT_TOKEN` to enable Telegram alerts. Browser push works out of the box on `http://localhost:3000`; anywhere else the site must be served over HTTPS. On iPhone, web push only works after adding the site to the Home Screen. All configuration options are listed in [docs/aws-deployment.md](docs/aws-deployment.md).
 
 ## Deploying
 

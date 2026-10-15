@@ -63,6 +63,10 @@ public record TrackerProperties(
     public record Telegram(String botToken) {
     }
 
-    public record Chat(String model, long maxTokens) {
+    /** provider is "gemini" or "claude"; model and maxTokens apply to Claude. */
+    public record Chat(String provider, String model, long maxTokens, Gemini gemini) {
+    }
+
+    public record Gemini(String apiKey, String model) {
     }
 }
