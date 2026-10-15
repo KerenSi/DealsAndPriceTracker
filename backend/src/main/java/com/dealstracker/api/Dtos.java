@@ -98,6 +98,11 @@ public final class Dtos {
     public record PushPublicKey(String publicKey) {
     }
 
-    public record PushTestResult(int delivered) {
+    /** Which browser to test: the endpoint of its subscription. Without one, every browser of the user. */
+    public record PushTestRequest(@Size(max = 1024) String endpoint) {
+    }
+
+    /** {@code status} is DELIVERED, NOT_REGISTERED or FAILED; {@code detail} is the push service's reply. */
+    public record PushTestResult(String status, int delivered, String detail) {
     }
 }

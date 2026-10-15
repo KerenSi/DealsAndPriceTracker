@@ -23,6 +23,13 @@ public class WebPushSender {
         FAILED
     }
 
+    /** What happened, with the push service's reply (or the error) when it wasn't delivered. */
+    public record Delivery(Result result, String detail) {
+        static Delivery of(Result result) {
+            return new Delivery(result, null);
+        }
+    }
+
     private static final Logger log = LoggerFactory.getLogger(WebPushSender.class);
 
     /** How long a push service keeps an undelivered message, e.g. while the computer is off. */
@@ -37,7 +44,7 @@ public class WebPushSender {
         this.clock = clock;
     }
 
-    public Result send(PushSubscription subscription, String json) {
+    public Delivery send(PushSubscription subscription, String json) {
         try {
             URI endpoint = URI.create(subscription.getEndpoint());
             String audience = endpoint.getScheme() + "://" + endpoint.getRawAuthority();
@@ -57,19 +64,20 @@ public class WebPushSender {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             int status = response.statusCode();
             if (status >= 200 && status < 300) {
-                return Result.DELIVERED;
+                return Delivery.of(Result.DELIVERED);
             }
+            String detail = ("%s answered %d %s".formatted(endpoint.getHost(), status, response.body())).strip();
             if (status == 404 || status == 410) {
-                return Result.GONE;
+                return new Delivery(Result.GONE, detail);
             }
-            log.warn("Push to {} failed with {}: {}", audience, status, response.body());
-            return Result.FAILED;
+            log.warn("Push failed: {}", detail);
+            return new Delivery(Result.FAILED, detail);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return Result.FAILED;
+            return new Delivery(Result.FAILED, "interrupted");
         } catch (Exception e) {
             log.warn("Push to subscription {} failed", subscription.getId(), e);
-            return Result.FAILED;
+            return new Delivery(Result.FAILED, "couldn't reach the push service: " + e);
         }
     }
 }
