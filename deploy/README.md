@@ -91,6 +91,10 @@ pointing at `terraform output elastic_ip`, then redeploy.
   `sudo docker exec -it dealstracker-db-1 psql -U dealstracker dealstracker`.
   Each ingestion run shows up as a burst of rows in `price_snapshots`:
   `SELECT date_trunc('hour', scraped_at) AS run, count(*) FROM price_snapshots GROUP BY 1 ORDER BY 1 DESC LIMIT 10;`
+- **Teammate access:** create an IAM user in the console and attach the
+  `dealstracker-operator` policy (`terraform output operator_policy_name`). It allows a shell on
+  this server, start/stop/reboot, and the `/dealstracker/` settings, and nothing else in the
+  account (other instances stay visible in lists but can't be touched).
 - **Backups:** the disk (including Postgres) is snapshotted daily at 01:00 UTC and kept
   for 7 days. Restore by creating a volume from a snapshot in the EC2 console.
 - **Tear down:** `terraform destroy` deletes everything, including the database.
